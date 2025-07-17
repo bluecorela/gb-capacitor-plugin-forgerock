@@ -9,6 +9,12 @@ npm install forgerock-bridge
 npx cap sync
 ```
 
+## Generate build
+
+```bash
+npm run build
+```
+
 ## API
 
 <docgen-index>
