@@ -31,12 +31,16 @@ class AuthenticationHandler {
 
         FRSession.authenticate(authIndexValue: journey) { token, node, error in
             if let error = error {
+                print("[ForgeRock] ERROR => \(error.localizedDescription)")
                 self.call.reject("Error starting authentication: \(error.localizedDescription)")
             } else if let node = node {
+                print("[ForgeRock] NODE RECEIVED => \(node.callbacks.map { String(describing: type(of: $0)) })")
                 handler.handle(node: node)
             } else if let token = token {
+                print("[ForgeRock] TOKEN => \(token.value)")
                 handler.onSuccess(token: token)
             } else {
+                print("[ForgeRock] UNEXPECTED RESULT")
                 self.call.reject("Unexpected authentication result")
             }
         }

@@ -5,13 +5,15 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import com.plugins.forgerockbridge.nodeListenerCallbacks.AuthNodeListener;
+import com.plugins.forgerockbridge.state.PluginState;
 
 
 @CapacitorPlugin(name = "ForgerockBridge")
 public class ForgerockBridgePlugin extends Plugin {
 
     public static Context context;
+    private final PluginState pluginState = new PluginState();
+
 
     @Override
     public void load() {
@@ -26,7 +28,7 @@ public class ForgerockBridgePlugin extends Plugin {
 
     @PluginMethod
     public void authenticate(PluginCall call) {
-        AuthenticationHandler.handle(call, context);
+        AuthenticationHandler.handle(call, getContext(), pluginState);
     }
 
     @PluginMethod
@@ -36,6 +38,6 @@ public class ForgerockBridgePlugin extends Plugin {
 
     @PluginMethod
     public void logout(PluginCall call) {
-        UserHandler.logout(new AuthNodeListener(call, getContext()));
+        UserHandler.logout(call);
     }
 }

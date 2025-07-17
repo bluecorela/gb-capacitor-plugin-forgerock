@@ -7,7 +7,6 @@ import org.forgerock.android.auth.FRListener;
 import org.forgerock.android.auth.FRUser;
 import org.forgerock.android.auth.UserInfo;
 import org.json.JSONObject;
-import com.plugins.forgerockbridge.nodeListenerCallbacks.AuthNodeListener;
 
 public class UserHandler {
 private static final String TAG = "[UserHandler]";
@@ -46,21 +45,22 @@ private static final String TAG = "[UserHandler]";
         }
     }
 
-    public static void logout(AuthNodeListener listener) {
+    public static void logout(PluginCall call) {
         try {
             FRUser currentSession = FRUser.getCurrentUser();
 
             if (currentSession != null) {
                 currentSession.logout();
-                listener.onSuccess("Session closed successfully.");
+
+                    JSObject result = new JSObject();
+                    call.resolve(result);
+
             } else {
-                listener.onError("No active session to logout.");
+                call.reject("No active session to logout.");
             }
 
         } catch (Exception e) {
-            listener.onError("Error closing the session: " + e.getMessage());
+            call.reject("Error closing the session: " + e.getMessage());
         }
     }
-
-
 }

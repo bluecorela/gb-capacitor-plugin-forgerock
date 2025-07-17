@@ -67,6 +67,7 @@ import Foundation
             ])
             return
         }
+        
 
         // 🚧 Segundo intento: responder ConfirmationCallback, pero no avanzar — esperamos que el usuario reenvíe credenciales
         if isRetry && hasConfirmation && !plugin.didSubmitConfirmation {
@@ -125,7 +126,7 @@ import Foundation
     }
 
     private func continueWithLogin(node: Node, username: String, password: String) {
-
+        
         for callback in node.callbacks {
             if let name = callback as? NameCallback {
                 name.setValue(username)
