@@ -4,7 +4,6 @@ import org.forgerock.android.auth.Node;
 
 public class PluginState {
     private Node pendingNode = null;
-    private boolean didSubmitConfirmation = false;
     private String lastErrorMessage;
 
     public Node getPendingNode() {
@@ -15,19 +14,9 @@ public class PluginState {
         this.pendingNode = pendingNode;
     }
 
-    public boolean getDidSubmitConfirmation() {
-        return didSubmitConfirmation;
-    }
-
-    public void setDidSubmitConfirmation(boolean value) {
-        this.didSubmitConfirmation = value;
-    }
-
     public void reset() {
         this.pendingNode = null;
-        this.didSubmitConfirmation = false;
     }
-
 
     public void setLastErrorMessage(String errorMessage) {
         this.lastErrorMessage = errorMessage;

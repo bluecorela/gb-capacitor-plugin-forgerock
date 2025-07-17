@@ -30,7 +30,6 @@ public class AuthNodeListener implements NodeListener<FRSession> {
         this.call = call;
         this.context = context;
         this.pluginState = pluginState;
-        Log.d(TAG, "[AuthNodeListener] instantiated for call with isRetry=" + call.getBoolean("isRetry"));
     }
 
     @Override
@@ -40,18 +39,17 @@ public class AuthNodeListener implements NodeListener<FRSession> {
             JSObject result = new JSObject()
                     .put("status", "authenticated")
                     .put("token", token.getValue());
-            Log.d(TAG, "[AuthNodeListener] << RESOLVE onSuccess >> " + result.toString());
-            call.resolve(result);
             pluginState.reset();
+            call.resolve(result);
         } catch (Exception e) {
-            Log.e(TAG, "[AuthNodeListener] Failed to retrieve token after successful authentication: " + e.getMessage(), e);
+            pluginState.reset();
             call.reject("Failed to retrieve token: " + e.getMessage(), e);
         }
     }
 
     @Override
     public void onException(Exception e) {
-        Log.e(TAG, "[AuthNodeListener] << onException >> " + e.getMessage(), e);
+        Log.d(TAG, "[AuthNodeListener] public void onException(Exception e)");
         pluginState.reset();
         call.reject("Authentication failed: " + e.getMessage(), e);
     }
@@ -59,178 +57,118 @@ public class AuthNodeListener implements NodeListener<FRSession> {
     @Override
     public void onCallbackReceived(Node node) {
         try {
-            // 1) Log incoming call data
-            Log.d(TAG, "[AuthNodeListener] << CALL DATA >> " + call.getData().toString());
-
-
-            // 2) Parse inputs
             final String username = call.getString("username");
             final String password = call.getString("password");
-            final boolean isRetry = Boolean.TRUE.equals(call.getBoolean("isRetry"));
-            Log.d(TAG, "[AuthNodeListener] Parsed input → username='" + username + "', password='" + password + "', isRetry=" + isRetry);
 
-            // 3) Determine which node to act on
-            Node activeNode = pluginState.getPendingNode() != null ? pluginState.getPendingNode() : node;
-
-            // 4) Inspect callbacks
-            boolean hasErrorMessage = false;
+            boolean hasTextOutput = false;
             boolean hasConfirmation = false;
+            boolean hasName = false;
+            boolean hasPass = false;
             String errorMessage = null;
             JSONArray callbackNames = new JSONArray();
 
-            for (Callback cb : activeNode.getCallbacks()) {
-                String cbName = cb.getClass().getSimpleName();
-                callbackNames.put(cbName);
-                Log.d(TAG, "[AuthNodeListener] Callback onCallbackReceived: " + cbName);
+            for (Callback cb : node.getCallbacks()) {
+                callbackNames.put(cb.getClass().getSimpleName());
                 if (cb instanceof TextOutputCallback) {
                     errorMessage = ((TextOutputCallback) cb).getMessage();
-                    Log.d(TAG, "[AuthNodeListener] TextOutputCallback message: " + errorMessage);
+                    Log.d(TAG, "[AuthNodeListener] errorMessage: "+ errorMessage);
+
                     pluginState.setLastErrorMessage(errorMessage);
-                    hasErrorMessage = true;
+                    hasTextOutput = true;
                 } else if (cb instanceof ConfirmationCallback) {
+                    ((ConfirmationCallback) cb).setSelectedIndex(0); // Siempre seleccionamos OK
                     hasConfirmation = true;
-                    if (isRetry) {
-                        ((ConfirmationCallback) cb).setSelectedIndex(0);
-                        Log.d(TAG, "[AuthNodeListener] ConfirmationCallback set to OK (index 0)");
-                    }
+                } else if (cb instanceof NameCallback) {
+                    hasName = true;
+                } else if (cb instanceof PasswordCallback) {
+                    hasPass = true;
                 }
             }
 
-            // 5) FIRST attempt: handle FRE015 / FRE016
-            if (hasErrorMessage && hasConfirmation && errorMessage != null) {
-                if (errorMessage.contains("FRE016")) {
-                    JSObject out = new JSObject()
-                            .put("status", "failure")
-                            .put("errorMessage", "FRE016")
-                            .put("callbacks", callbackNames);
-                    Log.d(TAG, "[AuthNodeListener] << RESOLVE FRE016 >> " + out.toString());
-                    call.resolve(out);
-                    pluginState.reset();
-                    return;
-                } else if (errorMessage.contains("FRE015")) {
-                    pluginState.setPendingNode(activeNode);
-                    pluginState.setDidSubmitConfirmation(false);
-                    JSObject out = new JSObject()
-                            .put("status", "awaitingRetry")
-                            .put("errorMessage", errorMessage)
-                            .put("callbacks", callbackNames);
-                    Log.d(TAG, "[AuthNodeListener] << RESOLVE FRE015 (awaitingRetry) >> " + out.toString());
-                    call.resolve(out);
-                    return;
-                }
-            }
+            // Paso 1: Si hay error + confirmación → reenviar internamente
+            if (hasTextOutput && hasConfirmation) {
+                Log.d(TAG, "[AuthNodeListener] TextOutput + Confirmation detected. Sending internal next()");
 
-            // 6) SECOND attempt: send ConfirmationCallback back to ForgeRock
-            if (isRetry && hasConfirmation && !pluginState.getDidSubmitConfirmation()) {
-                pluginState.setDidSubmitConfirmation(true);
-                Log.d(TAG, "[AuthNodeListener] << SECOND ATTEMPT >> Confirmation OK, forwarding to ForgeRock…");
-
-                Log.d(TAG, "[AuthNodeListener] SECOND attempt About to call node.next with pending node. Callbacks:");
-                for (Callback cb : pluginState.getPendingNode().getCallbacks()) {
-                    Log.d(TAG, "[AuthNodeListener] SECOND attempt PendingNode callback before next: " + cb.getClass().getSimpleName());
-                }
-                activeNode.next(context, new NodeListener<FRSession>() {
+                node.next(context, new NodeListener<FRSession>() {
                     @Override
                     public void onCallbackReceived(Node nextNode) {
-                        boolean hasConfirmation = false;
-                        JSONArray callbackNames = new JSONArray();
+                        boolean hasNextName = false;
+                        boolean hasNextPass = false;
+                        JSONArray innerCallbacks = new JSONArray();
 
                         for (Callback cb : nextNode.getCallbacks()) {
-                            String cbName = cb.getClass().getSimpleName();
-                            callbackNames.put(cbName);
-                            if (cb instanceof ConfirmationCallback) {
-                                hasConfirmation = true;
-                            }
+                            innerCallbacks.put(cb.getClass().getSimpleName());
+                            if (cb instanceof NameCallback) hasNextName = true;
+                            if (cb instanceof PasswordCallback) hasNextPass = true;
                         }
 
-                        if (hasConfirmation) {
+                        if (hasNextName && hasNextPass) {
                             pluginState.setPendingNode(nextNode);
-                            pluginState.setDidSubmitConfirmation(true);
+                            JSObject result = new JSObject()
+                                    .put("status", "awaitingRetry")
+                                    .put("errorMessage", pluginState.getLastErrorMessage())
+                                    .put("callbacks", innerCallbacks);
+                            call.resolve(result);
                         } else {
-                            pluginState.setPendingNode(null);
-                            pluginState.setDidSubmitConfirmation(true);
+                            call.reject("Unexpected state after confirmation");
                         }
-
-                        JSObject out = new JSObject()
-                                .put("status", "awaitingRetry")
-                                .put("errorMessage", pluginState.getLastErrorMessage())
-                                .put("callbacks", callbackNames);
-
-                        Log.d(TAG, "[AuthNodeListener] << RESOLVE awaitingRetry after next() >> " + out.toString());
-                        call.resolve(out);
                     }
 
                     @Override
                     public void onSuccess(FRSession session) {
                         pluginState.reset();
-                        JSObject ok = new JSObject()
+                        JSObject result = new JSObject()
                                 .put("status", "authenticated")
                                 .put("token", session.getSessionToken().getValue());
-                        Log.d(TAG, "[AuthNodeListener] << RESOLVE onSuccess after confirmation >> " + ok.toString());
-                        call.resolve(ok);
+                        call.resolve(result);
                     }
 
                     @Override
-                    public void onException(Exception ex) {
+                    public void onException(Exception e) {
+                        Log.e(TAG, "[AuthNodeListener] << ERROR after confirmation >> " + e.getMessage(), e);
+
+                        // Verifica si teníamos FRE016 guardado
+                        String errorMsg = pluginState.getLastErrorMessage();
+                        if (errorMsg != null && errorMsg.contains("FRE016")) {
+                            JSObject out = new JSObject()
+                                    .put("status", "failure")
+                                    .put("errorMessage", "FRE016");
+
+                            Log.d(TAG, "[AuthNodeListener] << RESOLVE FRE016 from onException >> " + out.toString());
+                            pluginState.reset();
+                            call.resolve(out);
+                            return;
+                        }
+
                         pluginState.reset();
-                        Log.e(TAG, "[AuthNodeListener] << ERROR after confirmation >> " + ex.getMessage(), ex);
-                        call.reject("Authentication failed after confirmation: " + ex.getMessage(), ex);
+                        call.reject("Authentication failed: " + e.getMessage(), e);
                     }
                 });
                 return;
             }
 
-            // 7) THIRD attempt: supply credentials again
-            boolean hasName = false, hasPass = false;
-            for (Callback cb : activeNode.getCallbacks()) {
-                if (cb instanceof NameCallback) hasName = true;
-                if (cb instanceof PasswordCallback) hasPass = true;
-            }
+            // Paso 2: Si llegan credenciales nuevamente → reenviar
             if (hasName && hasPass) {
-                continueWithLogin(activeNode, username, password);
+                for (Callback cb : node.getCallbacks()) {
+                    if (cb instanceof NameCallback) {
+                        ((NameCallback) cb).setName(username);
+                    } else if (cb instanceof PasswordCallback) {
+                        ((PasswordCallback) cb).setPassword(password.toCharArray());
+                    }
+                }
+                Log.d(TAG, "[AuthNodeListener] Sending credentials again via next()");
+                node.next(context, this);
                 return;
             }
 
-            // 8) Fallback
-            Log.w(TAG, "[AuthNodeListener] Unexpected node state, fallback to awaitingRetry or reject.");
-            if (pluginState.getPendingNode() != null) {
-                JSObject fallback = new JSObject()
-                        .put("status", "awaitingRetry")
-                        .put("errorMessage", errorMessage != null ? errorMessage : "Unexpected flow")
-                        .put("callbacks", callbackNames);
-                Log.d(TAG, "[AuthNodeListener] << RESOLVE fallback >> " + fallback.toString());
-                call.resolve(fallback);
-            } else {
-                call.reject("Unexpected authentication result: No user nor next node.");
-            }
+            // Fallback: sin manejo posible
+            pluginState.reset();
+            call.reject("Unhandled node state. Callbacks: " + callbackNames.toString());
 
         } catch (Exception e) {
-            Log.e(TAG, "[AuthNodeListener] Error processing node: " + e.getMessage(), e);
+            Log.d(TAG, "[AuthNodeListener] error catch (Exception e)");
+            pluginState.reset();
             call.reject("Error processing node: " + e.getMessage(), e);
         }
     }
-
-    private void continueWithLogin(Node node, String username, String password) {
-        for (Callback cb : node.getCallbacks()) {
-            String n = cb.getClass().getSimpleName();
-            Log.d(TAG, "[AuthNodeListener] Callback continueWithLogin: " + n);
-            if (cb instanceof NameCallback) {
-                ((NameCallback) cb).setName(username);
-                Log.d(TAG, "[AuthNodeListener] Setting username: " + username);
-            } else if (cb instanceof PasswordCallback) {
-                ((PasswordCallback) cb).setPassword(password.toCharArray());
-                Log.d(TAG, "[AuthNodeListener] Setting password for user.");
-            }
-        }
-
-        Log.d(TAG, "[AuthNodeListener] About to call node.next with current node. Callbacks:");
-        for (Callback cb : node.getCallbacks()) {
-            Log.d(TAG, "[AuthNodeListener] Callback before next: " + cb.getClass().getSimpleName());
-        }
-
-        // Ya estás en una instancia de AuthNodeListener. Usa `this`:
-        node.next(context, this);
-        Log.d(TAG, "[AuthNodeListener] Called node.next() with credentials.");
-    }
-
 }

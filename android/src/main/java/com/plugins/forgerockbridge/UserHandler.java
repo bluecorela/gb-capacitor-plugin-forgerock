@@ -9,9 +9,10 @@ import org.forgerock.android.auth.UserInfo;
 import org.json.JSONObject;
 
 public class UserHandler {
-private static final String TAG = "[UserHandler]";
+private static final String TAG = "ForgeRockBridge ";
 
    public static void getUserInfo(PluginCall call) {
+       Log.e(TAG, "[UserHandler] Getting user information was null or empty");
         if (FRUser.getCurrentUser() != null) {
             FRUser.getCurrentUser().getUserInfo(new FRListener<UserInfo>() {
                 @Override
@@ -20,28 +21,28 @@ private static final String TAG = "[UserHandler]";
                         JSONObject raw = result != null ? result.getRaw() : null;
                         if (raw != null) {
                             JSObject jsUserInfo = JSObject.fromJSONObject(raw);
-                            Log.d(TAG, "Getting user information: " + jsUserInfo);
+                            Log.d(TAG, "[UserHandler] Getting user information: " + jsUserInfo);
 
                             call.resolve(jsUserInfo);
                         } else {
-                            Log.e(TAG, "Getting user information was null or empty");
+                            Log.e(TAG, "[UserHandler] Getting user information was null or empty");
                             call.reject("userInfo result was null or empty");
                         }
                     } catch (Exception e) {
-                        Log.e(TAG, "Error parsing user info", e);
+                        Log.e(TAG, "[UserHandler] Error parsing user info", e);
                         call.reject("error", e.getMessage(), e);
                     }
                 }
 
                 @Override
                 public void onException(Exception e) {
-                    Log.e(TAG, "getUserInfo Failed", e);
+                    Log.e(TAG, "[UserHandler] getUserInfo Failed", e);
                     call.reject("error", e.getMessage(), e);
                 }
             });
 
         } else {
-            Log.e(TAG, "Current user is null. Not logged in or SDK not initialized yet");
+            Log.e(TAG, "[UserHandler] Current user is null. Not logged in or SDK not initialized yet");
         }
     }
 
