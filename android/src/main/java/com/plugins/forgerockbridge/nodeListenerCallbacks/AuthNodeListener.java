@@ -129,10 +129,10 @@ public class AuthNodeListener implements NodeListener<FRSession> {
 
                         // Verifica si teníamos FRE016 guardado
                         String errorMsg = pluginState.getLastErrorMessage();
-                        if (errorMsg != null && errorMsg.contains("FRE016")) {
+                        if (errorMsg != null && (errorMsg.contains("FRE016") || errorMsg.contains("FRE022"))) {
                             JSObject out = new JSObject()
                                     .put("status", "failure")
-                                    .put("errorMessage", "FRE016");
+                                    .put("errorMessage", errorMsg);
 
                             Log.d(TAG, "[AuthNodeListener] << RESOLVE FRE016 from onException >> " + out.toString());
                             pluginState.reset();
