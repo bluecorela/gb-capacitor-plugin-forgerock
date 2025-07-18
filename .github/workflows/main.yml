@@ -1,0 +1,44 @@
+name: Build & Release Capacitor Plugin
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧾 Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🛠️ Build Capacitor Plugin
+        run: npm run build
+
+      - name: 🏷️ Extract version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: ✏️ Update version in package.json
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          jq ".version = \"$VERSION\"" package.json > tmp.$$.json && mv tmp.$$.json package.json
+
+      - name: 🧃 Pack plugin as .tgz
+        run: npm pack
+
+      - name: 🗂️ Create GitHub release and upload .tgz
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "*.tgz"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
