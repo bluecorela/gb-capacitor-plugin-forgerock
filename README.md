@@ -6,7 +6,12 @@ Plugin para comunicarse con el SDK nativos de Forgerock
 
 ```bash
 npm install forgerock-bridge
-npx cap sync
+```
+
+## Build
+
+```bash
+npm run build
 ```
 
 ## Generate build
