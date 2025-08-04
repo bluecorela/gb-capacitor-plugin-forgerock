@@ -28,20 +28,20 @@ public class OTPTokenHandler {
     private static final String TAG = "ForgeRockBridge";
 
     public static void startOtpJourney(PluginCall call, Context context, NodeListener<FRSession> listener ) {
+        String journey = call.getString("journey");
+        
+        if (journey == null) {
+            call.reject("Missing journey name");
+            return;
+        }
+        
+        Log.d(TAG, "journey" + journey);
+        
         try {
-            String journey = call.getString("journey");
-            if (journey == null) {
-                call.reject("Missing journey name");
-                return;
-            }
-            Log.d(TAG, "[startOtpTreeAuthentication] Starting new authenticate with journey: " + journey);
-            Log.d(TAG, "CALL " + call);
-
             FRSession.authenticate(context, journey, listener);
-
         } catch (Exception e) {
             Log.e(TAG, "[startOtpTreeAuthentication] authenticate error", e);
-            call.reject("authenticate failed: " + e.getMessage(), e);
+            call.reject("[startOtpTreeAuthentication] failed: " + e.getMessage(), e);
         }
     }
 

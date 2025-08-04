@@ -39,7 +39,7 @@ public class OTPNodeListener implements NodeListener<FRSession> {
     }
     @Override
     public void onException(@NonNull Exception e) {
-        Log.d(TAG, "[AuthNodeListener]: public void onException(Exception e)" + e);
+        Log.d(TAG, "[OTPNodeListener]: public void onException(Exception e)" + e);
         pluginState.reset();
         call.reject("authenticate failed: " + e.getMessage(), e);
     }
@@ -76,13 +76,13 @@ public class OTPNodeListener implements NodeListener<FRSession> {
            if(hasHiddenValue){
                registerMechanism(uri, node);
            }else if (hasTextOutput) {
-               Log.d(TAG, "[AuthNodeListener] errorMessage: " + errorMessage);
+               Log.d(TAG, "[OTPNodeListener] errorMessage: " + errorMessage);
                call.reject("Error processing node: " + errorMessage);
                pluginState.reset();
            }
            
         } catch (Exception e) {
-            Log.d(TAG, "[AuthNodeListener] error catch (Exception e)");
+            Log.d(TAG, "[OTPNodeListener] error catch (Exception e)");
             call.reject("Error processing node: " + e.getMessage(), e);
             pluginState.reset();
         }
@@ -114,7 +114,7 @@ public class OTPNodeListener implements NodeListener<FRSession> {
 
             @Override
             public void onException(Exception e) {
-                Log.e(TAG, "Error registrando OTP: " + e.getMessage(), e);
+                Log.e(TAG, "[OTPNodeListener] Error registrando OTP: " + e.getMessage(), e);
                 call.reject("Error creando mecanismo OTP: " + e.getMessage(), e);
                 pluginState.reset();
             }

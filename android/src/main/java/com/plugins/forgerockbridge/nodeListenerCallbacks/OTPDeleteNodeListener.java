@@ -43,20 +43,13 @@ public class OTPDeleteNodeListener implements NodeListener<FRSession> {
 
     @Override
     public void onCallbackReceived(Node node) {
-        try {
-            Log.d(TAG, "[this.call Delete] this.3call: " + this.call);
-            Log.d(TAG, "[node] node: " );
-            Log.d(TAG, "[AuthNodeListener] errorMessage: " );
-        } catch (Exception e) {
-            Log.d(TAG, "[AuthNodeListener] error catch (Exception e)");
-            pluginState.reset();
-            call.reject("Error processing node: " + e.getMessage(), e);
-        }
+        Log.d(TAG, "[OTPDeleteNodeListener] onCallbackReceived: " );
+        
     }
 
     @Override
     public void onException(@NonNull Exception e) {
-        Log.d(TAG, "[AuthNodeListener]: public void onException(Exception e)" + e);
+        Log.d(TAG, "[OTPDeleteNodeListener]: public void onException(Exception e)" + e);
         pluginState.reset();
         call.reject("authenticate failed: " + e.getMessage(), e);
     }
@@ -73,8 +66,8 @@ public class OTPDeleteNodeListener implements NodeListener<FRSession> {
             deleteOtpRegister();
 
         } catch (Exception e) {
-            Log.e(TAG, "Error eliminando OTP", e);
-            call.reject("Fallo al eliminar OTP: " + e.getMessage());
+            Log.e(TAG, "[OTPDeleteNodeListener]  Error eliminando OTP", e);
+            call.reject("[OTPDeleteNodeListener] Fallo al eliminar OTP: " + e.getMessage());
         }
         pluginState.reset();
 
@@ -95,12 +88,12 @@ public class OTPDeleteNodeListener implements NodeListener<FRSession> {
                     Mechanism mechanism = mechanisms.get(0);
                     fraClient.removeMechanism(mechanism);
 
-                    Log.d(TAG, "OTP eliminado para: " + account.getAccountName());
+                    Log.d(TAG, "[OTPDeleteNodeListener] OTP eliminado para: " + account.getAccountName());
                 }
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "[startOtpTreeAuthentication] authenticate error", e);
+            Log.e(TAG, "[OTPDeleteNodeListener]  authenticate error", e);
             call.reject("authenticate failed: " + e.getMessage(), e);
         }
     }
