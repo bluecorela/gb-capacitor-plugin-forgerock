@@ -29,6 +29,9 @@ npm run build
 * [`logout()`](#logout)
 * [`userInfo()`](#userinfo)
 * [`getAccessToken()`](#getaccesstoken)
+* [`initializeOTPRegister(...)`](#initializeotpregister)
+* [`deleteOTPRegister(...)`](#deleteotpregister)
+* [`validateOTP()`](#validateotp)
 
 </docgen-index>
 
@@ -92,6 +95,47 @@ getAccessToken() => Promise<string>
 ```
 
 **Returns:** <code>Promise&lt;string&gt;</code>
+
+--------------------
+
+
+### initializeOTPRegister(...)
+
+```typescript
+initializeOTPRegister(options: { journey: string; }) => Promise<{ status: string; }>
+```
+
+| Param         | Type                              |
+| ------------- | --------------------------------- |
+| **`options`** | <code>{ journey: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ status: string; }&gt;</code>
+
+--------------------
+
+
+### deleteOTPRegister(...)
+
+```typescript
+deleteOTPRegister(options: { journey: string; }) => Promise<{ status: string; }>
+```
+
+| Param         | Type                              |
+| ------------- | --------------------------------- |
+| **`options`** | <code>{ journey: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ status: string; }&gt;</code>
+
+--------------------
+
+
+### validateOTP()
+
+```typescript
+validateOTP() => Promise<{ empty: boolean; }>
+```
+
+**Returns:** <code>Promise&lt;{ empty: boolean; }&gt;</code>
 
 --------------------
 

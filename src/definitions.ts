@@ -21,6 +21,15 @@ export interface ForgerockBridgePlugin {
   }>;
   userInfo(): Promise<string>;
   getAccessToken(): Promise<string>;
+  initializeOTPRegister(options: {
+    journey: string;
+  }): Promise<{ status: string }>;
+  deleteOTPRegister(options: {
+    journey: string;
+  }): Promise<{ status: string }>;
+  validateOTP(): Promise<{
+    empty: boolean;
+  }>;
 }
 
 const ForgerockBridge = registerPlugin<ForgerockBridgePlugin>('ForgerockBridge');

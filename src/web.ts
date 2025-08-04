@@ -1,7 +1,10 @@
-import type { ForgerockBridgePlugin } from './definitions';
 import { WebPlugin } from '@capacitor/core';
 
+import type { ForgerockBridgePlugin } from './definitions';
+
+
 export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlugin {
+
   async echo(options: { value: string }): Promise<{ value: string }> {
     console.log('ECHO', options);
     return options;
@@ -31,5 +34,22 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
 
   async getAccessToken(): Promise<any> {
     return { success: true };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async initializeOTPRegister(_options: {
+    journey: string;
+  }): Promise<{ status: string }> {
+    console.warn('initializeOTPRegister is not supported on web');
+    return { status: 'not_implemented' };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  deleteOTPRegister(_options: { journey: string; }): Promise<{ status: string; }> {
+    throw new Error('Method not implemented.');
+  }
+
+  validateOTP(): Promise<{empty: true}> {
+    return Promise.resolve({ empty: true });
   }
 }
