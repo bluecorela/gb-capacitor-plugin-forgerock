@@ -16,4 +16,5 @@ Pod::Spec.new do |s|
   s.swift_version = '5.9'
   s.dependency 'FRAuth', "4.7.0"
   s.dependency 'FRCore', "4.7.0"
+  s.dependency 'FRAuthenticator', "4.7.0"
 end
