@@ -52,4 +52,9 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
   validateOTP(): Promise<{empty: true}> {
     return Promise.resolve({ empty: true });
   }
+
+  generateOTP(): Promise<{otp: ""}> {
+    return Promise.resolve({ otp: "" });
+  }
+  
 }

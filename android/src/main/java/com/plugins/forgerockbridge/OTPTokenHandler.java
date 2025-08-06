@@ -16,6 +16,8 @@ import org.forgerock.android.auth.FRUser;
 import org.forgerock.android.auth.Mechanism;
 import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.NodeListener;
+import org.forgerock.android.auth.OathMechanism;
+import org.forgerock.android.auth.OathTokenCode;
 import org.forgerock.android.auth.exception.AuthenticatorException;
 
 import com.plugins.forgerockbridge.nodeListenerCallbacks.OTPDeleteNodeListener;
@@ -47,9 +49,8 @@ public class OTPTokenHandler {
 
     public static void validateOTP(PluginCall call, Context context) {
         try {
-            FRAClient fraClient = new FRAClient.FRAClientBuilder()
-                    .withContext(context)
-                    .start();
+         
+            FRAClient fraClient = initClient(context);
 
             List<Account> accounts = fraClient.getAllAccounts();
             JSObject result = new JSObject();
@@ -60,6 +61,56 @@ public class OTPTokenHandler {
         } catch (Exception e) {
             Log.e(TAG, "[startOtpTreeAuthentication] authenticate error", e);
             call.reject("authenticate failed: " + e.getMessage(), e);
+        }
+    }
+
+
+    public static void generateOTP(PluginCall call, Context context) {
+        try {
+        
+            FRAClient fraClient = initClient(context);
+
+            Account account = getAccount(fraClient);
+            OathMechanism mechanism = getOathMechanism(account);
+            OathTokenCode token = mechanism.getOathTokenCode();
+            String otp = token.getCurrentCode();
+            Log.d(TAG, "Código OTP actual: " + otp);
+
+            JSObject result = new JSObject();
+            result.put("otp", otp);
+            result.put("expiresIn", token.getProgress());
+            call.resolve(result);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error generando OTP", e);
+            call.reject(TAG,"Error generando OTP: " + e.getMessage());
+        }
+    }
+
+    private static FRAClient initClient(Context context) throws AuthenticatorException {
+        return new FRAClient.FRAClientBuilder().withContext(context).start();
+    }
+
+    private static Account getAccount(FRAClient fraClient) throws OTPException {
+        List<Account> accounts = fraClient.getAllAccounts();
+        if (accounts == null || accounts.isEmpty()) {
+            throw new OTPException("No hay cuentas registradas");
+        }
+        return accounts.get(0);
+    }
+
+    private static OathMechanism getOathMechanism(Account account) throws OTPException {
+        for (Mechanism mechanism : account.getMechanisms()) {
+            if (mechanism instanceof OathMechanism) {
+                return (OathMechanism) mechanism;
+            }
+        }
+        throw new OTPException("Sin OTP registrado");
+    }
+
+    private static class OTPException extends Exception {
+        public OTPException(String message) {
+            super(message);
         }
     }
 

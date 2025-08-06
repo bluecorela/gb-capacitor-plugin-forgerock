@@ -65,6 +65,9 @@ public class ForgerockBridgePlugin extends Plugin {
         OTPTokenHandler.validateOTP(call, context);
     }
 
-
+    @PluginMethod
+    public void generateOTP(PluginCall call) {
+        OTPTokenHandler.generateOTP(call, context);
+    }
     
 }
