@@ -1,4 +1,5 @@
 import Capacitor
+import FRAuthenticator
 import FRAuth
 import Foundation
 
@@ -7,90 +8,96 @@ import Foundation
     let plugin: ForgerockBridgePlugin
     var errorMessage: String
 
+
     init(call: CAPPluginCall, plugin: ForgerockBridgePlugin) {
         self.call = call
         self.plugin = plugin
         self.errorMessage = ""
+
     }
 
     func handle(node: Node) {
 
-        let isRetry = call.getBool("isRetry") ?? false
+        print("vino handle", node)
         let activeNode = plugin.pendingNode ?? node
 
+        print("activeNode", activeNode)
         var hasErrorMessage = false
         var hasConfirmation = false
-        var hasNameAndPasswordCallbacks = false
+        var hiddenValue = false
 
-        for callback in activeNode.callbacks {
-            print("call", callback)
+
+         for callback in activeNode.callbacks {
+             print("call", callback)
             switch callback {
 
             case let textOutput as TextOutputCallback:
                 hasErrorMessage = true
+                var messageType: MessageType? = nil
+                
                 self.errorMessage = textOutput.message
-                print("textOutput.message",textOutput.message)
-                if textOutput.message.contains("FRE016") {
-                      plugin.pendingNode = nil
-                      plugin.didSubmitConfirmation = false
-                  }
+                
+                messageType = textOutput.messageType
+                
+                extractOTPURL(message: self.errorMessage, currentNode: node )
 
             case let confirmation as ConfirmationCallback:
                 hasConfirmation = true
-                if isRetry {
-                    confirmation.value = 0
-                }
-
+                print("ConfirmationCallback",hasConfirmation)
+            case let hiddenValue as HiddenValueCallback:
+                var uri = hiddenValue.getValue()
+                print("hiddenValue", uri)
             default: break
             }
-        }
-
+         }
     }
 
-    private func continueWithLogin(node: Node, username: String, password: String) {
-        print("vino aca", self.errorMessage)
-        for callback in node.callbacks {
-            if let name = callback as? NameCallback {
-                name.setValue(username)
-            } else if let pass = callback as? PasswordCallback {
-                pass.setValue(password)
-            }
-        }
+    private func extractOTPURL(message: String, currentNode: Node) {
+        if message.contains("otpauth://") {
+            
+            // Extraer la URI entre comillas
+            if let rangeStart = message.range(of: "'otpauth://"),
+               let rangeEnd = message.range(of: "'", range: rangeStart.upperBound..<message.endIndex) {
+                var uri = String(message[rangeStart.lowerBound..<rangeEnd.upperBound])
+                    .replacingOccurrences(of: "'", with: "")
+                               
+                guard let url = URL(string: uri) else {
+                    print("URI inválido: \(uri)")
+                    return
+                }
+    
+                print("✅ OTP URL extraída: \(url)")
+                
+                guard let fraClient = FRAClient.shared else {
+                    print("FRAClient no está inicializado")
+                    return
+                }
 
-        node.next { (user: FRUser?, nextNode: Node?, error: Error?) in
-           
-            if let error = error {
-                print("[ForgeRock] Error al enviar credenciales: \(error)")
-                self.call.resolve([
-                    "status": "authenticateFailed",
-                    "errorMessage": self.errorMessage ?? error.localizedDescription,
-                    "callbacks": node.callbacks.map { String(describing: type(of: $0)) }
-                ])
-            } else if let user = user {
-                print("[ForgeRock] Autenticación exitosa, token: \(user.token)")
-                self.plugin.pendingNode = nil
-                self.plugin.didSubmitConfirmation = false
-                self.onSuccess(token: user.token)
-            } else if let nextNode = nextNode {
-                print("[ForgeRock] Respuesta con siguiente node")
-                self.plugin.pendingNode = nil
-                self.handle(node: nextNode)
+                fraClient.createMechanismFromUri(
+                    uri: url,
+                    onSuccess: { mechanism in
+                        print("OTP registrado:", mechanism.mechanismUUID)
+
+                        // Finalizar flujo del árbol (importante para completar el journey)
+                        currentNode.next { (_: FRUser?, nextNode: Node?, error: Error?) in
+                            if let error = error {
+                                print("Error al avanzar en el árbol:", error.localizedDescription)
+                            } else if let nextNode = nextNode {
+                                print("➡️ Nodo siguiente recibido:", nextNode)
+                                self.handle(node: nextNode)
+                            } else {
+                                print("Registro OTP completado exitosamente")
+                            }
+                        }
+                    },
+                    onError: { error in
+                        print("Error al registrar mecanismo:", error.localizedDescription)
+                    }
+                )
             } else {
-                print("[ForgeRock] Estado inesperado tras login: sin node ni token")
-                self.call.reject("Unexpected authentication result")
+                print("No se pudo extraer la URI del mensaje")
             }
         }
     }
 
-    public func onSuccess(token: Token?) {
-        if let token = token {
-            self.call.resolve([
-                "status": "authenticated",
-                "token": token.value,
-            ])
-        } else {
-            print("[ForgeRock] Unexpected state — no token, node, or error.")
-            self.call.reject("Unexpected authentication result")
-        }
-    }
 }

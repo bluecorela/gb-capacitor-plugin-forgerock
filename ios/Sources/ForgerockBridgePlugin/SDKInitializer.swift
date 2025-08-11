@@ -1,4 +1,5 @@
 import Foundation
+import FRAuthenticator
 import Capacitor
 import FRAuth
 
@@ -28,6 +29,7 @@ class SDKInitializer {
                 oauthScope: oauthScope)
 
             try FRAuth.start(options: options)
+            try FRAClient.start() 
             print("[ForgeRock] SDK initialized")
             call.resolve(["status": "success"])
         } catch {

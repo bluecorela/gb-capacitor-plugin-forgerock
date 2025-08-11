@@ -74,17 +74,28 @@ public class OTPTokenHandler {
             OathMechanism mechanism = getOathMechanism(account);
             OathTokenCode token = mechanism.getOathTokenCode();
             String otp = token.getCurrentCode();
+
+            var expiresIn = getRemainingTime(token);
+
+            Log.d(TAG, "Segundos restantes: " + expiresIn);
             Log.d(TAG, "Código OTP actual: " + otp);
 
             JSObject result = new JSObject();
             result.put("otp", otp);
-            result.put("expiresIn", token.getProgress());
+            result.put("expiresIn", expiresIn);
+
             call.resolve(result);
 
         } catch (Exception e) {
             Log.e(TAG, "Error generando OTP", e);
             call.reject(TAG,"Error generando OTP: " + e.getMessage());
         }
+    }
+    private static long getRemainingTime(OathTokenCode token){
+        long until = token.getUntil();
+        long now = System.currentTimeMillis();
+
+        return (until - now) / 1000;
     }
 
     private static FRAClient initClient(Context context) throws AuthenticatorException {

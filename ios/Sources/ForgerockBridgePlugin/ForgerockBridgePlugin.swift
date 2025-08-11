@@ -18,6 +18,8 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "userInfo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getAccessToken", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "initializeOTPRegister", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "validateOTP", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "deleteOTPRegister", returnType: CAPPluginReturnPromise),
     ]
     public var pendingNode: Node? = nil
     public var didSubmitConfirmation = false
@@ -49,15 +51,22 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     }
     
     // Inicializa el metodo de token y registro 
-      @objc func initializeOTPRegister(_ call: CAPPluginCall) {
+    @objc func initializeOTPRegister(_ call: CAPPluginCall) {
           let handler = OTPTokenHandler(call: call, plugin: self)
-             handler.initializeOTPRegister()
+             handler.initializeOTPRegister(call: call)
     }
 
      // Eliminar token registrado 
-      @objc func deleteOTPRegister(_ call: CAPPluginCall) {
+    @objc func deleteOTPRegister(_ call: CAPPluginCall) {
+        print("esta en deleteOTPRegister")
           let handler = OTPTokenHandler(call: call, plugin: self)
-             handler.deleteOTPRegistration()
+             handler.deleteOTPRegistration(call: call)
+    }
+
+    @objc func validateOTP(_ call: CAPPluginCall) {
+        print("esta en otp")
+        let handler = OTPTokenHandler(call: call, plugin: self)
+        handler.validateOTP(call: call);
     }
 
     

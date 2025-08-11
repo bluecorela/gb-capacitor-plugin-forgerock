@@ -77,24 +77,18 @@ import Foundation
             
             activeNode.next { (user: FRUser?, nextNode: Node?, error: Error?) in
                 if let error = error {
-                    self.call.resolve([
-                        "status": "authenticateFailed",
-                        "errorMessage": self.errorMessage ?? error.localizedDescription,
-                        "callbacks": activeNode.callbacks.map { String(describing: type(of: $0)) }
-                    ])
+                    print("❌ Error al avanzar nodo: \(error.localizedDescription)")
+                    // Manejar el error apropiadamente
                 } else if let nextNode = nextNode {
-                    self.plugin.pendingNode = nextNode
-                    
-                    self.call.resolve([
-                        "status": "awaitingRetry",
-                        "errorMessage": self.errorMessage,
-                        "callbacks": nextNode.callbacks.map { String(describing: type(of: $0)) }
-                    ])
+                    print("➡️ Nodo siguiente recibido con callbacks: \(nextNode.callbacks)")
+                    // Aquí manejas el siguiente nodo si aún hay uno
+                    self.handle(node: nextNode)
                 } else if let user = user {
-                    self.plugin.pendingNode = nil
-                    self.onSuccess(token: user.token)
+                    print("✅ Nodo final alcanzado. Autenticación/registro completado con usuario:sin ID")
+                    // Aquí finaliza el flujo exitoso
+                    // Puedes cerrar modal, avanzar a otra pantalla, etc.
                 } else {
-                    self.call.reject("Unexpected authentication result")
+                    print("⚠️ No se recibió ni nodo ni usuario. Posible error en el árbol.")
                 }
             }
             return

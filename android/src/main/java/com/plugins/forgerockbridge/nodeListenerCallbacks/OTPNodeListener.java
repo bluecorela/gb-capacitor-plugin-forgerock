@@ -74,6 +74,8 @@ public class OTPNodeListener implements NodeListener<FRSession> {
             }
 
            if(hasHiddenValue){
+               Log.d(TAG, "[URI] errorMessage: " + uri);
+
                registerMechanism(uri, node);
            }else if (hasTextOutput) {
                Log.d(TAG, "[OTPNodeListener] errorMessage: " + errorMessage);
