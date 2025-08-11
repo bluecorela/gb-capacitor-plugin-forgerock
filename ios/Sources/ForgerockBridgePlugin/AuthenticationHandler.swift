@@ -28,7 +28,7 @@ class AuthenticationHandler {
             call.reject("Missing required parameter: journey")
             return
         }
-
+        print("journey",journey);
         FRSession.authenticate(authIndexValue: journey) { token, node, error in
             if let error = error {
                 print("[ForgeRock] ERROR => \(error.localizedDescription)")

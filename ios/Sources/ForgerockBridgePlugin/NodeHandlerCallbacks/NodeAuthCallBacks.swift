@@ -6,60 +6,61 @@ import Foundation
     private let call: CAPPluginCall
     let plugin: ForgerockBridgePlugin
     var errorMessage: String
-
+    
     init(call: CAPPluginCall, plugin: ForgerockBridgePlugin) {
         self.call = call
         self.plugin = plugin
         self.errorMessage = ""
     }
-
+    
     func handle(node: Node) {
         guard let username = call.getString("username"),
               let password = call.getString("password") else {
             self.call.reject("Missing credentials")
             return
         }
-
+        
         let isRetry = call.getBool("isRetry") ?? false
         let activeNode = plugin.pendingNode ?? node
-
+        
         var hasErrorMessage = false
         var hasConfirmation = false
         var hasNameAndPasswordCallbacks = false
-
+        
         for callback in activeNode.callbacks {
             switch callback {
             case is NameCallback, is PasswordCallback:
                 if isRetry {
                     hasNameAndPasswordCallbacks = true
                 }
-
+                
             case let textOutput as TextOutputCallback:
                 hasErrorMessage = true
                 self.errorMessage = textOutput.message
                 if textOutput.message.contains("FRE016") {
-                      plugin.pendingNode = nil
-                      plugin.didSubmitConfirmation = false
-                  }
-
+                    plugin.pendingNode = nil
+                    plugin.didSubmitConfirmation = false
+                }
+                
             case let confirmation as ConfirmationCallback:
                 hasConfirmation = true
                 if isRetry {
                     confirmation.value = 0
                 }
-
+                
             default: break
             }
         }
-
+        
         // 🚧 Primer intento con error (FRE015), guardar pendingNode y esperar retry
         if hasErrorMessage && hasConfirmation && !isRetry && !self.errorMessage.contains("FRE016") {
+            print("entro aqui", self.errorMessage)
             if plugin.pendingNode == nil {
                 plugin.pendingNode = activeNode
             }
-
+            
             plugin.didSubmitConfirmation = false
-
+            
             call.resolve([
                 "status": "awaitingRetry",
                 "errorMessage": self.errorMessage ?? "Unknown error",
@@ -68,51 +69,47 @@ import Foundation
             return
         }
         
-
+        
         // 🚧 Segundo intento: responder ConfirmationCallback, pero no avanzar — esperamos que el usuario reenvíe credenciales
         if isRetry && hasConfirmation && !plugin.didSubmitConfirmation {
+            print("entro aqui 2", self.errorMessage)
             plugin.didSubmitConfirmation = true
-
+            
             activeNode.next { (user: FRUser?, nextNode: Node?, error: Error?) in
                 if let error = error {
-                    self.call.resolve([
-                        "status": "authenticateFailed",
-                        "errorMessage": self.errorMessage ?? error.localizedDescription,
-                        "callbacks": activeNode.callbacks.map { String(describing: type(of: $0)) }
-                    ])
+                    print("❌ Error al avanzar nodo: \(error.localizedDescription)")
+                    // Manejar el error apropiadamente
                 } else if let nextNode = nextNode {
-                    self.plugin.pendingNode = nextNode
-
-                    self.call.resolve([
-                        "status": "awaitingRetry",
-                        "errorMessage": self.errorMessage,
-                        "callbacks": nextNode.callbacks.map { String(describing: type(of: $0)) }
-                    ])
+                    print("➡️ Nodo siguiente recibido con callbacks: \(nextNode.callbacks)")
+                    // Aquí manejas el siguiente nodo si aún hay uno
+                    self.handle(node: nextNode)
                 } else if let user = user {
-                    self.plugin.pendingNode = nil
-                    self.onSuccess(token: user.token)
+                    print("✅ Nodo final alcanzado. Autenticación/registro completado con usuario:sin ID")
+                    // Aquí finaliza el flujo exitoso
+                    // Puedes cerrar modal, avanzar a otra pantalla, etc.
                 } else {
-                    self.call.reject("Unexpected authentication result")
+                    print("⚠️ No se recibió ni nodo ni usuario. Posible error en el árbol.")
                 }
             }
             return
         }
-
+        
         // 🚨 Tercer intento: usuario reintenta con credenciales
         if isRetry && hasNameAndPasswordCallbacks && plugin.didSubmitConfirmation {
+            print("entro aqui 3", self.errorMessage)
             continueWithLogin(node: activeNode, username: username, password: password)
             return
         }
-
+        
         // 💤 Retry recibido sin ConfirmationCallback (nuevo intento)
         if isRetry && hasNameAndPasswordCallbacks {
-
+            print("entro aqui 4", self.errorMessage)
             if plugin.pendingNode !== activeNode {
                 plugin.pendingNode = activeNode
             }
-
+            
             plugin.didSubmitConfirmation = false
-
+            
             call.resolve([
                 "status": "awaitingRetry",
                 "errorMessage": errorMessage ?? "Waiting for user to retry",
@@ -120,13 +117,13 @@ import Foundation
             ])
             return
         }
-
+        
         // ✅ Primer intento exitoso
         continueWithLogin(node: activeNode, username: username, password: password)
     }
-
+    
     private func continueWithLogin(node: Node, username: String, password: String) {
-        
+        print("vino aca", self.errorMessage)
         for callback in node.callbacks {
             if let name = callback as? NameCallback {
                 name.setValue(username)
@@ -134,8 +131,9 @@ import Foundation
                 pass.setValue(password)
             }
         }
-
+        
         node.next { (user: FRUser?, nextNode: Node?, error: Error?) in
+            
             if let error = error {
                 print("[ForgeRock] Error al enviar credenciales: \(error)")
                 self.call.resolve([
@@ -158,8 +156,9 @@ import Foundation
             }
         }
     }
-
+    
     public func onSuccess(token: Token?) {
+        
         if let token = token {
             self.call.resolve([
                 "status": "authenticated",
@@ -169,5 +168,7 @@ import Foundation
             print("[ForgeRock] Unexpected state — no token, node, or error.")
             self.call.reject("Unexpected authentication result")
         }
+        
+        
     }
 }

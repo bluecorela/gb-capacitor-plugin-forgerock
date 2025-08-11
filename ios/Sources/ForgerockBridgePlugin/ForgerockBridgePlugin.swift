@@ -2,6 +2,7 @@ import Foundation
 import FRAuth
 import Capacitor
 
+
 /**
  * Please read the Capacitor iOS Plugin Development Guide
  * here: https://capacitorjs.com/docs/plugins/ios
@@ -16,6 +17,9 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "logout", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "userInfo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getAccessToken", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "initializeOTPRegister", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "validateOTP", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "deleteOTPRegister", returnType: CAPPluginReturnPromise),
     ]
     public var pendingNode: Node? = nil
     public var didSubmitConfirmation = false
@@ -45,5 +49,25 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func getAccessToken(_ call: CAPPluginCall) {
         TokenHandler.getAccessToken(call: call)
     }
+    
+    // Inicializa el metodo de token y registro 
+    @objc func initializeOTPRegister(_ call: CAPPluginCall) {
+          let handler = OTPTokenHandler(call: call, plugin: self)
+             handler.initializeOTPRegister(call: call)
+    }
+
+     // Eliminar token registrado 
+    @objc func deleteOTPRegister(_ call: CAPPluginCall) {
+        print("esta en deleteOTPRegister")
+          let handler = OTPTokenHandler(call: call, plugin: self)
+             handler.deleteOTPRegistration(call: call)
+    }
+
+    @objc func validateOTP(_ call: CAPPluginCall) {
+        print("esta en otp")
+        let handler = OTPTokenHandler(call: call, plugin: self)
+        handler.validateOTP(call: call);
+    }
+
     
 }
