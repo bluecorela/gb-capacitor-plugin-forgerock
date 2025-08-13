@@ -50,12 +50,6 @@ public class ForgerockBridgePlugin extends Plugin {
     }
 
     @PluginMethod
-    public void initializeDeleteOTP(PluginCall call) {
-        Log.d("ForgeRockBridge","Primer llamado");
-        OTPTokenHandler.startOtpJourney(call, context, new OTPNodeListener(call, context, pluginState));
-    }
-
-    @PluginMethod
     public void deleteOTPRegister(PluginCall call) {
         OTPTokenHandler.startOtpJourney(call, context, new OTPDeleteNodeListener(call, context, pluginState));
     }
