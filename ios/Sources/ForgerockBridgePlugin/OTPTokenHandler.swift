@@ -7,28 +7,20 @@ import FRAuthenticator
 class OTPTokenHandler {
     private let call: CAPPluginCall
     private let plugin: ForgerockBridgePlugin
-    private let fraClient = FRAClient.shared
+    private var fraClient: FRAClient? { FRAClient.shared }
     
     init(call: CAPPluginCall, plugin: ForgerockBridgePlugin) {
         self.call = call
         self.plugin = plugin
     }
 
-    enum OTPError: Error {
-        case noAccounts
-        case noOtpRegistered
-    }
-
     func startJourney(_ call: CAPPluginCall,completion: @escaping NodeCompletion<Token> ) {
         guard let journey = call.getString("journey"), !journey.isEmpty else {
-            call.reject("Missing journey name")
+            ErrorHandler.reject(call, code: OTPErrorCode.missingJourney)
             return
         }
-        do {
-            FRSession.authenticate(authIndexValue: journey, completion: completion)
-        } catch {
-            call.reject("[startOtpJourney] failed: \(error.localizedDescription)")
-        }
+        
+          FRSession.authenticate(authIndexValue: journey, completion: completion)
     }
     
 
@@ -38,61 +30,62 @@ class OTPTokenHandler {
                 var empty = true;
                 for account in accounts {
                     for mech in account.mechanisms {
-                        print("mech", mech)
                         empty = false;
                     }
                 }
+                print("[EMPTY]",empty)
                 var result = JSObject()
-                
                 result["empty"] = empty;
                 call.resolve(result)
             }else {
-                print("No hay cuentas registradas")
+                throw OTPErrorCode.noAccountsRegistered
             }
-        } catch {
-            print("[validateOTP] Error al obtener cuentas OTP: \(error)")
-            call.reject("Fallo en la validación OTP: \(error.localizedDescription)")
+        } catch let error as OTPErrorCode {
+            ErrorHandler.reject(call, code: error)
+        }
+        catch {
+            ErrorHandler.reject(call, code: .unknown_error)
         }
     }
     
     func generateOTP(call: CAPPluginCall) {
     do {
-            if let accounts = fraClient?.getAllAccounts() {
-                let token = try generateCode(from: accounts);
-                
-                var result = JSObject()
-                result["otp"] = token.otp
-                result["expiresIn"] = token.time
-                
-                print("token", token, "result", result)
-                call.resolve(result)
-            }else {
-                print("No hay cuentas registradas")
+            guard let accounts = fraClient?.getAllAccounts(), !accounts.isEmpty else {
+                throw OTPErrorCode.noAccountsRegistered
             }
-        } catch OTPError.noAccounts {
-            call.reject("No hay cuentas registradas")
-        } catch OTPError.noOtpRegistered {
-            call.reject("Sin OTP registrado")
+
+             let token = try generateCode(from: accounts)
+
+             var result = JSObject()
+             result["otp"] = token.otp
+             result["expiresIn"] = token.time
+             call.resolve(result)
+        
+        } catch let error as OTPErrorCode {
+            ErrorHandler.reject(call, code: error)
         } catch {
-            call.reject("Error generando OTP: \(error.localizedDescription)")
+            ErrorHandler.reject(call, code: .unknown_error)
         }
     }
 
 
     func generateCode(from accounts: [Account]) throws -> (otp: String, time: Int)  {
+        
+        guard !accounts.isEmpty else {
+           throw OTPErrorCode.noAccountsRegistered
+        }
+        
         for account in accounts {
             for mech in account.mechanisms {
                 if let totpMechanism = mech as? TOTPMechanism {
                     if let otp = try? totpMechanism.generateCode() {
-                        print("Mecanismo encontrado:", totpMechanism)
-                        print("OTP generado:", otp.code, otp.until)
                         let remainingTime = getRemainingTime(from: otp);
                         return (otp: otp.code, time: remainingTime)
                     }
                 }
             }
         }
-        throw OTPError.noOtpRegistered
+        throw OTPErrorCode.noOtpRegistered
     }
     
     func getRemainingTime(from token: OathTokenCode) -> Int {
