@@ -39,13 +39,9 @@ import Foundation
         var messageError = "";
         var url: String? ;
         for (index, callback) in node.callbacks.enumerated() {
-            print("─── Callback #\(index + 1) ───")
-            print("Tipo: \(type(of: callback))")
             
             switch callback {
                 case let textCb as TextOutputCallback:
-                    print("TextOutputCallback - mensaje:", textCb.message)
-                    print("TextOutputCallback - tipo mensaje:", textCb.messageType.rawValue)
                     if(textCb.messageType.rawValue == 2){
                         hasError = true
                         messageError = textCb.message
@@ -64,7 +60,6 @@ import Foundation
                 let uri = URL(string: url ?? "null")
                 self.createMechanismFromUri(otpURL: URL(string: url ?? "null") ?? URL(string: "null")!)
                 node.next(completion: self.handle)
-                print("uri final",uri)
             }
         }
        

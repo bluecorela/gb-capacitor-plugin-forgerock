@@ -19,32 +19,16 @@ class OTPTokenHandler {
         case noOtpRegistered
     }
 
-    func startOtpJourney(_ call: CAPPluginCall) {
-            let handler = NodeOTPCallBacks(call: call, plugin: plugin);
-            guard let journey = call.getString("journey"), !journey.isEmpty else {
-                call.reject("Missing journey name")
-                return
-            }
-
-            do {
-                FRSession.authenticate(authIndexValue: journey, completion: handler.handle)
-            } catch {
-                call.reject("[startOtpJourney] failed: \(error.localizedDescription)")
-            }
-    }
-
-    func deleteOTPRegistration(_ call: CAPPluginCall) {
-        
-            let handler = NodeOTPDeleteCallBacks(call: call, plugin: plugin);
-            guard let journey = call.getString("journey"), !journey.isEmpty else {
-                call.reject("Missing journey name")
-                return
-            }
-            do {
-                FRSession.authenticate(authIndexValue: journey, completion: handler.handle)
-            } catch {
-                call.reject("[startOtpJourney] failed: \(error.localizedDescription)")
-            }
+    func startJourney(_ call: CAPPluginCall,completion: @escaping NodeCompletion<Token> ) {
+        guard let journey = call.getString("journey"), !journey.isEmpty else {
+            call.reject("Missing journey name")
+            return
+        }
+        do {
+            FRSession.authenticate(authIndexValue: journey, completion: completion)
+        } catch {
+            call.reject("[startOtpJourney] failed: \(error.localizedDescription)")
+        }
     }
     
 

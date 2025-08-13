@@ -54,7 +54,6 @@ import Foundation
         
         // 🚧 Primer intento con error (FRE015), guardar pendingNode y esperar retry
         if hasErrorMessage && hasConfirmation && !isRetry && !self.errorMessage.contains("FRE016") {
-            print("entro aqui", self.errorMessage)
             if plugin.pendingNode == nil {
                 plugin.pendingNode = activeNode
             }
@@ -72,7 +71,6 @@ import Foundation
         
         // 🚧 Segundo intento: responder ConfirmationCallback, pero no avanzar — esperamos que el usuario reenvíe credenciales
         if isRetry && hasConfirmation && !plugin.didSubmitConfirmation {
-            print("entro aqui 2", self.errorMessage)
             plugin.didSubmitConfirmation = true
             
             activeNode.next { (user: FRUser?, nextNode: Node?, error: Error?) in
@@ -96,14 +94,12 @@ import Foundation
         
         // 🚨 Tercer intento: usuario reintenta con credenciales
         if isRetry && hasNameAndPasswordCallbacks && plugin.didSubmitConfirmation {
-            print("entro aqui 3", self.errorMessage)
             continueWithLogin(node: activeNode, username: username, password: password)
             return
         }
         
         // 💤 Retry recibido sin ConfirmationCallback (nuevo intento)
         if isRetry && hasNameAndPasswordCallbacks {
-            print("entro aqui 4", self.errorMessage)
             if plugin.pendingNode !== activeNode {
                 plugin.pendingNode = activeNode
             }
@@ -123,7 +119,6 @@ import Foundation
     }
     
     private func continueWithLogin(node: Node, username: String, password: String) {
-        print("vino aca", self.errorMessage)
         for callback in node.callbacks {
             if let name = callback as? NameCallback {
                 name.setValue(username)

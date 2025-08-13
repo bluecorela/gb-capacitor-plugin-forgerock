@@ -54,14 +54,17 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     
     // Inicializa el metodo de token y registro 
     @objc func initializeOTPRegister(_ call: CAPPluginCall) {
-          let handler = OTPTokenHandler(call: call, plugin: self)
-        handler.startOtpJourney(call)
+        let runner = OTPTokenHandler(call: call, plugin: self)
+        let cb = NodeOTPCallBacks(call: call, plugin: self)
+        runner.startJourney(call, completion: cb.handle)
+
     }
 
      // Eliminar token registrado 
     @objc func deleteOTPRegister(_ call: CAPPluginCall) {
-          let handler = OTPTokenHandler(call: call, plugin: self)
-        handler.deleteOTPRegistration(call)
+        let runner = OTPTokenHandler(call: call, plugin: self)
+        let cb = NodeOTPDeleteCallBacks(call: call, plugin: self)
+        runner.startJourney(call, completion: cb.handle)
     }
 
     @objc func generateOTP(_ call: CAPPluginCall) {
