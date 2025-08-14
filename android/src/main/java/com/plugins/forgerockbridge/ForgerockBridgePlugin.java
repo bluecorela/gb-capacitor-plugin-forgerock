@@ -1,7 +1,6 @@
 package com.plugins.forgerockbridge;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -63,5 +62,5 @@ public class ForgerockBridgePlugin extends Plugin {
     public void generateOTP(PluginCall call) {
         OTPTokenHandler.generateOTP(call, context);
     }
-    
+
 }
