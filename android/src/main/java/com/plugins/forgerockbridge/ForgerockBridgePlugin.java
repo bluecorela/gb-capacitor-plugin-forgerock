@@ -1,7 +1,6 @@
 package com.plugins.forgerockbridge;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -50,12 +49,6 @@ public class ForgerockBridgePlugin extends Plugin {
     }
 
     @PluginMethod
-    public void initializeDeleteOTP(PluginCall call) {
-        Log.d("ForgeRockBridge","Primer llamado");
-        OTPTokenHandler.startOtpJourney(call, context, new OTPNodeListener(call, context, pluginState));
-    }
-
-    @PluginMethod
     public void deleteOTPRegister(PluginCall call) {
         OTPTokenHandler.startOtpJourney(call, context, new OTPDeleteNodeListener(call, context, pluginState));
     }
@@ -69,5 +62,5 @@ public class ForgerockBridgePlugin extends Plugin {
     public void generateOTP(PluginCall call) {
         OTPTokenHandler.generateOTP(call, context);
     }
-    
+
 }

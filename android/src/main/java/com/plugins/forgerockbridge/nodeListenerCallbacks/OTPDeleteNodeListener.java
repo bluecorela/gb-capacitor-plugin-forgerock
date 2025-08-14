@@ -12,22 +12,14 @@ import com.plugins.forgerockbridge.state.PluginState;
 import org.forgerock.android.auth.FRSession;
 import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.NodeListener;
-import org.forgerock.android.auth.SSOToken;
-import org.forgerock.android.auth.callback.Callback;
-import org.forgerock.android.auth.callback.ConfirmationCallback;
-import org.forgerock.android.auth.callback.TextOutputCallback;
-import org.forgerock.android.auth.callback.HiddenValueCallback;
-import org.forgerock.android.auth.FRListener;
 import org.forgerock.android.auth.Mechanism;
 import org.forgerock.android.auth.FRAClient;
 import org.forgerock.android.auth.*;
 
 
-import org.json.JSONArray;
-
 import java.util.List;
-import java.util.Objects;
 
+import com.plugins.forgerockbridge.ErrorHandler;
 public class OTPDeleteNodeListener implements NodeListener<FRSession> {
 
     private static final String TAG = "ForgeRockBridge";
@@ -43,31 +35,21 @@ public class OTPDeleteNodeListener implements NodeListener<FRSession> {
 
     @Override
     public void onCallbackReceived(Node node) {
-        Log.d(TAG, "[OTPDeleteNodeListener] onCallbackReceived: " );
-        
     }
 
     @Override
     public void onException(@NonNull Exception e) {
-        Log.d(TAG, "[OTPDeleteNodeListener]: public void onException(Exception e)" + e);
         pluginState.reset();
-        call.reject("authenticate failed: " + e.getMessage(), e);
+        ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.AUTHENTICATE_FAILED);
     }
 
     @Override
     public void onSuccess(FRSession frSession) {
         try {
-
-            JSObject result = new JSObject();
-            result.put("status", "success");
-            result.put("message", "OTP eliminado correctamente");
-            call.resolve(result);
-
             deleteOtpRegister();
 
         } catch (Exception e) {
-            Log.e(TAG, "[OTPDeleteNodeListener]  Error eliminando OTP", e);
-            call.reject("[OTPDeleteNodeListener] Fallo al eliminar OTP: " + e.getMessage());
+          ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.DELETE_OTP_FAILED);
         }
         pluginState.reset();
 
@@ -87,14 +69,20 @@ public class OTPDeleteNodeListener implements NodeListener<FRSession> {
                 if (!mechanisms.isEmpty()) {
                     Mechanism mechanism = mechanisms.get(0);
                     fraClient.removeMechanism(mechanism);
-
-                    Log.d(TAG, "[OTPDeleteNodeListener] OTP eliminado para: " + account.getAccountName());
+                    finalStepToDeleteOTP();
                 }
             }
 
         } catch (Exception e) {
             Log.e(TAG, "[OTPDeleteNodeListener]  authenticate error", e);
-            call.reject("authenticate failed: " + e.getMessage(), e);
+          ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.AUTHENTICATE_FAILED);
         }
+    }
+
+    private void finalStepToDeleteOTP(){
+      JSObject result = new JSObject();
+      result.put("status", "success");
+      result.put("message", "OTP eliminado correctamente");
+      call.resolve(result);
     }
 }

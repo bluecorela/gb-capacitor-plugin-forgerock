@@ -7,116 +7,94 @@ import FRAuthenticator
 class OTPTokenHandler {
     private let call: CAPPluginCall
     private let plugin: ForgerockBridgePlugin
-    private let fraClient = FRAClient.shared
-
+    private var fraClient: FRAClient? { FRAClient.shared }
+    
     init(call: CAPPluginCall, plugin: ForgerockBridgePlugin) {
         self.call = call
         self.plugin = plugin
     }
 
-    func initializeOTPRegister(call: CAPPluginCall) {
-        print("entro")
-        guard  let journey = call.getString("journey")
-        else {
-            call.reject("Missing required parameters")
+    func startJourney(_ call: CAPPluginCall,completion: @escaping NodeCompletion<Token> ) {
+        guard let journey = call.getString("journey"), !journey.isEmpty else {
+            ErrorHandler.reject(call, code: OTPErrorCode.missingJourney)
             return
         }
-
-        print("journey", journey)
-
-        if let currentSession = FRSession.currentSession {
-            print("Hay una sesión activa: \(currentSession.sessionToken)")
-        }
-        startOTPRegistrationFlow(journey: journey)
-       
-        print("startOTPRegistrationFlow")
-    }
-
-    //  func getJourny(call: CAPPluginCall) {
-    //     print("getJourny")
-    //     guard  let journey = call.getString("journey")
-    //     else {
-    //         call.reject("Missing required parameters")
-    //         return
-    //     }
         
-       
-
-    //     print("journey", journey)
-
-    //     if let currentSession = FRSession.currentSession {
-    //         print("Hay una sesión activa: \(currentSession.sessionToken)")
-    //     }
-
-    //     return journey;
-
-    // }
-
-    func startOTPRegistrationFlow(journey: String){
-        let handler = NodeOTPCallBacks(call: call, plugin: plugin)
-        FRSession.authenticate(authIndexValue: journey) { token, node, error in
-            if let error = error {
-                print("[ForgeRock OTP] ERROR => \(error.localizedDescription)")
-                self.call.reject("Error starting authentication: \(error.localizedDescription)")
-            } else if let node = node {
-                print("[ForgeRock OTP] NODE RECEIVED => \(node.callbacks.map { String(describing: type(of: $0)) })")
-                
-                print("Callbacks disponibles:")
-                for callback in node.callbacks {
-                    print("Tipo: \(type(of: callback)) \(callback)")
-                }
-                
-               handler.handle(node: node)
-            } else {
-                print("[ForgeRock OTP] UNEXPECTED RESULT")
-                self.call.reject("Unexpected authentication result")
-            }
-        }
+          FRSession.authenticate(authIndexValue: journey, completion: completion)
     }
     
-    
-
-    
-
-    func deleteOTPRegistration(call: CAPPluginCall) {
-        // let journy = getJourny(CAPPluginCall);
-        let handler = NodeOTPCallBacks(call: call, plugin: plugin)
-     
-
-
-        guard let journey = call.getString("journey") else {
-            call.reject("Missing required parameter: journey")
-            return
-        }
-
-        print("Iniciando flujo DELETE OTP con journey: \(journey)")
-        
-        FRSession.authenticate(authIndexValue: journey) { token, node, error in
-            if let error = error {
-                print("[ForgeRock OTP] ERROR => \(error.localizedDescription)")
-                self.call.reject("Error starting authentication: \(error.localizedDescription)")
-            } else {
-                print("[ForgeRock OTP] UNEXPECTED RESULT")
-                self.call.reject("Unexpected authentication result")
-            }
-        }
-    }
 
     func validateOTP(call: CAPPluginCall) {
         do {
-            print("entro al validateOTP")
-            let accounts = self.fraClient?.getAllAccounts()
-            var result = JSObject()
+            if let accounts = fraClient?.getAllAccounts() {
+                var empty = true;
+                for account in accounts {
+                    for mech in account.mechanisms {
+                        empty = false;
+                    }
+                }
+                print("[EMPTY]",empty)
+                var result = JSObject()
+                result["empty"] = empty;
+                call.resolve(result)
+            }else {
+                throw OTPErrorCode.noAccountsRegistered
+            }
+        } catch let error as OTPErrorCode {
+            ErrorHandler.reject(call, code: error)
+        }
+        catch {
+            ErrorHandler.reject(call, code: .unknown_error)
+        }
+    }
+    
+    func generateOTP(call: CAPPluginCall) {
+    do {
+            guard let accounts = fraClient?.getAllAccounts(), !accounts.isEmpty else {
+                throw OTPErrorCode.noAccountsRegistered
+            }
 
-            result["empty"] = accounts?.isEmpty ?? true
-            print("empty", result)
-            call.resolve(result)
+             let token = try generateCode(from: accounts)
+
+             var result = JSObject()
+             result["otp"] = token.otp
+             result["expiresIn"] = token.time
+             call.resolve(result)
+        
+        } catch let error as OTPErrorCode {
+            ErrorHandler.reject(call, code: error)
         } catch {
-            print("[validateOTP] Error al obtener cuentas OTP: \(error)")
-            call.reject("Fallo en la validación OTP: \(error.localizedDescription)")
+            ErrorHandler.reject(call, code: .unknown_error)
         }
     }
 
+
+    func generateCode(from accounts: [Account]) throws -> (otp: String, time: Int)  {
+        
+        guard !accounts.isEmpty else {
+           throw OTPErrorCode.noAccountsRegistered
+        }
+        
+        for account in accounts {
+            for mech in account.mechanisms {
+                if let totpMechanism = mech as? TOTPMechanism {
+                    if let otp = try? totpMechanism.generateCode() {
+                        let remainingTime = getRemainingTime(from: otp);
+                        return (otp: otp.code, time: remainingTime)
+                    }
+                }
+            }
+        }
+        throw OTPErrorCode.noOtpRegistered
+    }
+    
+    func getRemainingTime(from token: OathTokenCode) -> Int {
+        guard let until = token.until else { return 0}
+        let now = Date().timeIntervalSince1970
+        return Int(until - now)
+    }
+
 }
+
 
 

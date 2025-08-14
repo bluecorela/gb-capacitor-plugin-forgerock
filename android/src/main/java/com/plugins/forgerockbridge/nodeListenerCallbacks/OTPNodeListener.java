@@ -21,9 +21,7 @@ import org.forgerock.android.auth.*;
 
 
 import org.forgerock.android.auth.exception.AuthenticatorException;
-import org.json.JSONArray;
-
-import java.util.List;
+import com.plugins.forgerockbridge.ErrorHandler;
 
 public class OTPNodeListener implements NodeListener<FRSession> {
 
@@ -39,9 +37,9 @@ public class OTPNodeListener implements NodeListener<FRSession> {
     }
     @Override
     public void onException(@NonNull Exception e) {
-        Log.d(TAG, "[OTPNodeListener]: public void onException(Exception e)" + e);
-        pluginState.reset();
-        call.reject("authenticate failed: " + e.getMessage(), e);
+      Log.d(TAG, "[OTPDeleteNodeListener]: public void onException(Exception e)" + e);
+      pluginState.reset();
+      ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.AUTHENTICATE_FAILED);
     }
 
     @Override
@@ -53,12 +51,11 @@ public class OTPNodeListener implements NodeListener<FRSession> {
     @Override
     public void onCallbackReceived(Node node) {
         try {
-            String errorMessage = null;
             String uri = null;
             boolean hasTextOutput = false;
             boolean hasHiddenValue = false;
 
-             for (Callback cb : node.getCallbacks()) { 
+             for (Callback cb : node.getCallbacks()) {
                 if (cb instanceof HiddenValueCallback) {
                     hasHiddenValue = true;
                     uri = ((HiddenValueCallback) cb).getValue();
@@ -67,26 +64,21 @@ public class OTPNodeListener implements NodeListener<FRSession> {
                     int messageType = ((TextOutputCallback) cb).getMessageType();
                     if(messageType == 2){
                         hasTextOutput = true;
-                        errorMessage = ((TextOutputCallback) cb).getMessage();
                         break;
                     }
                 }
             }
 
            if(hasHiddenValue){
-               Log.d(TAG, "[URI] errorMessage: " + uri);
-
                registerMechanism(uri, node);
            }else if (hasTextOutput) {
-               Log.d(TAG, "[OTPNodeListener] errorMessage: " + errorMessage);
-               call.reject("Error processing node: " + errorMessage);
-               pluginState.reset();
+             ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.CALLBACK_FAILED);
+             pluginState.reset();
            }
-           
+
         } catch (Exception e) {
-            Log.d(TAG, "[OTPNodeListener] error catch (Exception e)");
-            call.reject("Error processing node: " + e.getMessage(), e);
-            pluginState.reset();
+          ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.CALLBACK_FAILED);
+          pluginState.reset();
         }
     }
 
@@ -99,7 +91,7 @@ public class OTPNodeListener implements NodeListener<FRSession> {
         fraClient.createMechanismFromUri(uri, new FRAListener<Mechanism>() {
             @Override
             public void onSuccess(Mechanism mechanism) {
-                    
+
                     // Next to finish process register in FR
                     node.next(context, null);
 
@@ -107,18 +99,16 @@ public class OTPNodeListener implements NodeListener<FRSession> {
                     result.put("status", "success");
                     result.put("message", "OTP registrado correctamente");
 
-                    Log.d(TAG, "RESULT"+String.valueOf(result));
 
                     call.resolve(result);
                     pluginState.reset();
-               
+
             }
 
             @Override
             public void onException(Exception e) {
-                Log.e(TAG, "[OTPNodeListener] Error registrando OTP: " + e.getMessage(), e);
-                call.reject("Error creando mecanismo OTP: " + e.getMessage(), e);
-                pluginState.reset();
+              ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.REGISTER_OTP_FAILED);
+              pluginState.reset();
             }
         });
     }

@@ -16,88 +16,82 @@ import Foundation
 
     }
 
-    func handle(node: Node) {
+    func handle(token: Token?, node: Node?, error: Error?) {
+        if let error = error {
+            ErrorHandler.reject(call, code: OTPErrorCode.authenticateFailed)
+            return
+        }
 
-        print("vino handle", node)
-        let activeNode = plugin.pendingNode ?? node
-
-        print("activeNode", activeNode)
-        var hasErrorMessage = false
-        var hasConfirmation = false
-        var hiddenValue = false
-
-
-         for callback in activeNode.callbacks {
-             print("call", callback)
-            switch callback {
-
-            case let textOutput as TextOutputCallback:
-                hasErrorMessage = true
-                var messageType: MessageType? = nil
-                
-                self.errorMessage = textOutput.message
-                
-                messageType = textOutput.messageType
-                
-                extractOTPURL(message: self.errorMessage, currentNode: node )
-
-            case let confirmation as ConfirmationCallback:
-                hasConfirmation = true
-                print("ConfirmationCallback",hasConfirmation)
-            case let hiddenValue as HiddenValueCallback:
-                var uri = hiddenValue.getValue()
-                print("hiddenValue", uri)
-            default: break
-            }
-         }
-    }
-
-    private func extractOTPURL(message: String, currentNode: Node) {
-        if message.contains("otpauth://") {
-            
-            // Extraer la URI entre comillas
-            if let rangeStart = message.range(of: "'otpauth://"),
-               let rangeEnd = message.range(of: "'", range: rangeStart.upperBound..<message.endIndex) {
-                var uri = String(message[rangeStart.lowerBound..<rangeEnd.upperBound])
-                    .replacingOccurrences(of: "'", with: "")
-                               
-                guard let url = URL(string: uri) else {
-                    print("URI inválido: \(uri)")
-                    return
-                }
-    
-                print("✅ OTP URL extraída: \(url)")
-                
-                guard let fraClient = FRAClient.shared else {
-                    print("FRAClient no está inicializado")
-                    return
-                }
-
-                fraClient.createMechanismFromUri(
-                    uri: url,
-                    onSuccess: { mechanism in
-                        print("OTP registrado:", mechanism.mechanismUUID)
-
-                        // Finalizar flujo del árbol (importante para completar el journey)
-                        currentNode.next { (_: FRUser?, nextNode: Node?, error: Error?) in
-                            if let error = error {
-                                print("Error al avanzar en el árbol:", error.localizedDescription)
-                            } else if let nextNode = nextNode {
-                                print("➡️ Nodo siguiente recibido:", nextNode)
-                                self.handle(node: nextNode)
-                            } else {
-                                print("Registro OTP completado exitosamente")
-                            }
-                        }
-                    },
-                    onError: { error in
-                        print("Error al registrar mecanismo:", error.localizedDescription)
-                    }
-                )
-            } else {
-                print("No se pudo extraer la URI del mensaje")
-            }
+        if let node = node {
+            onCallbackReceived(node)
+            return
         }
     }
+
+
+    private func onCallbackReceived(_ node: Node) {
+        
+        var hasError = false;
+        var messageError = "";
+        var url: String? ;
+        for (_, callback) in node.callbacks.enumerated() {
+            
+            if let textCb = callback as? TextOutputCallback {
+                if textCb.messageType.rawValue == 2 {
+                    hasError = true
+                    messageError = textCb.message
+                } else if textCb.messageType.rawValue == 3 {
+                    url = self.extractOTPURL(message: textCb.message) ?? ""
+                }
+            }
+        }
+        
+        if(url != ""){
+            self.createMechanismFromUri(otpURL: URL(string: url ?? "null") ?? URL(string: "null")!, node: node)
+        }else if(hasError && url == ""){
+            ErrorHandler.reject(call, code: OTPErrorCode.callbackFailed)
+        }else{
+            ErrorHandler.reject(call, code: OTPErrorCode.unknown_error)
+        }
+       
+    }
+
+    private func createMechanismFromUri(otpURL: URL, node: Node){
+        guard let fraClient = FRAClient.shared else {
+            ErrorHandler.reject(call, code: OTPErrorCode.withOutInitializedShared)
+            return
+        }
+
+        fraClient.createMechanismFromUri(
+            uri: otpURL,
+            onSuccess: { mechanism in
+                self.finalStepToRegisterOTP(node: node)
+            },
+            onError: { error in
+                ErrorHandler.reject(self.call, code: OTPErrorCode.registerOTPFailed)
+            }
+        )
+    }
+    
+    private func finalStepToRegisterOTP(node: Node) {
+        node.next(completion: self.handle)
+        var result = JSObject()
+        result["status"] = "success";
+        self.call.resolve(result)
+    }
+
+    private func extractOTPURL(message: String) -> String? {
+        if let rangeStart = message.range(of: "'otpauth://"),
+           let rangeEnd = message.range(of: "'", range: rangeStart.upperBound..<message.endIndex) {
+            
+            let uri = String(message[rangeStart.lowerBound..<rangeEnd.upperBound])
+                .replacingOccurrences(of: "'", with: "")
+
+            return uri
+        }
+        return nil
+    }
+    
+
 
 }
