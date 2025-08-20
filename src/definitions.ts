@@ -30,6 +30,9 @@ export interface ForgerockBridgePlugin {
   validateOTP(): Promise<{
     empty: boolean;
   }>;
+  hasRegisteredMechanism(): Promise<{
+    empty: boolean;
+  }>;
   generateOTP(): Promise<{
     otp: string;
   }>;

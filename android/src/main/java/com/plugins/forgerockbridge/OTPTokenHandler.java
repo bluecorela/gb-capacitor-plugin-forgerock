@@ -9,25 +9,37 @@ import com.getcapacitor.PluginCall;
 
 import org.forgerock.android.auth.Account;
 import org.forgerock.android.auth.FRAClient;
+import org.forgerock.android.auth.FRListener;
 import org.forgerock.android.auth.FRSession;
+import org.forgerock.android.auth.FRUser;
 import org.forgerock.android.auth.Mechanism;
 import org.forgerock.android.auth.NodeListener;
 import org.forgerock.android.auth.OathMechanism;
 import org.forgerock.android.auth.OathTokenCode;
+import org.forgerock.android.auth.UserInfo;
 import org.forgerock.android.auth.exception.AuthenticatorException;
+import org.json.JSONObject;
 
-import com.plugins.forgerockbridge.ErrorHandler;
+import com.plugins.forgerockbridge.ErrorHandler.OTPException;
 
 import java.util.List;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class OTPTokenHandler {
     private static final String TAG = "ForgeRockBridge";
 
-
+    public interface StringCallback {
+        void onSuccess(String result);
+        void onError(Exception e);
+    }
   public static void startOtpJourney(PluginCall call, Context context, NodeListener<FRSession> listener ) {
         String journey = call.getString("journey");
 
         if (journey == null) {
+            Log.e(TAG, "[OTPTokenHandler]: Error in get Journey");
           ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.MISSING_JOURNEY);
             return;
         }
@@ -36,25 +48,47 @@ public class OTPTokenHandler {
 
     }
 
-    public static void validateOTP(PluginCall call, Context context) {
+  public static void hasRegisteredMechanism(PluginCall call, Context context) {
         try {
-
-            FRAClient fraClient = initClient(context);
-
-            List<Account> accounts = fraClient.getAllAccounts();
+            Log.d(TAG, "[OTPTokenHandler]: Sending existence of mechanism true or false");
+            
+            boolean emptyMechanism = validateExistMechanism(context);
             JSObject result = new JSObject();
 
-            result.put("empty", accounts.isEmpty());
-
+            result.put("empty", emptyMechanism);
             call.resolve(result);
         } catch (Exception e) {
+          Log.e(TAG, "[OTPTokenHandler]: RETURN FRE026 ERROR from onException");
           ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.NO_ACCOUNTS_REGISTERED);
         }
-    }
+  }
 
+  public static void validateExistenceOTP(PluginCall call, Context context) {
+        FRUser user = FRUser.getCurrentUser();
+        if (user == null) {
+            Log.e(TAG, "[OTPTokenHandler]: FRUser is null");
+            ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.GETTING_USER_INFO);
+        }
 
-    public static void generateOTP(PluginCall call, Context context) {
+        user.getUserInfo(new FRListener<UserInfo>() {
+            @Override
+            public void onSuccess(UserInfo userInfo) {
+                String uuid = userInfo.getSub();
+                checkServerAndDeviceOtpState(call, context, uuid);
+
+            }
+
+            @Override
+            public void onException(Exception e) {
+                Log.e(TAG, "[OTPTokenHandler]: Error getting userInfo", e);
+                ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.GETTING_USER_INFO);
+            }
+        });
+  }
+
+  public static void generateOTP(PluginCall call, Context context) {
         try {
+            Log.d(TAG, "[OTPTokenHandler]: Generate OTP with OathTokenCode");
 
             FRAClient fraClient = initClient(context);
 
@@ -73,32 +107,46 @@ public class OTPTokenHandler {
             call.resolve(result);
 
         } catch (OTPException e) {
+            Log.e(TAG, "[OTPTokenHandler]: RETURN ERROR in get OTP with OTPException");
           ErrorHandler.reject(call, e.getCode());
         } catch (Exception e) {
+            Log.e(TAG, "[OTPTokenHandler]: RETURN FRE000 ERROR from onException");
             ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.UNKNOWN_ERROR);
         }
     }
 
-    private static long getRemainingTime(OathTokenCode token){
+  private static boolean validateExistMechanism(Context context) throws OTPException {
+      try{
+        FRAClient fraClient = initClient(context);
+
+        List<Account> accounts = fraClient.getAllAccounts();
+
+        return accounts.isEmpty();
+      } catch (Exception e) {
+          throw new OTPException(ErrorHandler.OTPErrorCode.NO_ACCOUNTS_REGISTERED);
+      }
+    }
+
+  private static long getRemainingTime(OathTokenCode token){
       long until = token.getUntil();
       long now = System.currentTimeMillis();
 
       return (until - now) / 1000;
     }
 
-    private static FRAClient initClient(Context context) throws AuthenticatorException {
+  private static FRAClient initClient(Context context) throws AuthenticatorException {
         return new FRAClient.FRAClientBuilder().withContext(context).start();
-    }
+  }
 
-    private static Account getAccount(FRAClient fraClient) throws OTPException  {
+  private static Account getAccount(FRAClient fraClient) throws OTPException  {
         List<Account> accounts = fraClient.getAllAccounts();
         if (accounts == null || accounts.isEmpty()) {
           throw new OTPException(ErrorHandler.OTPErrorCode.NO_ACCOUNTS_REGISTERED);
         }
         return accounts.get(0);
-    }
+  }
 
-    private static OathMechanism getOathMechanism(Account account) throws OTPException  {
+   private static OathMechanism getOathMechanism(Account account) throws OTPException  {
         for (Mechanism mechanism : account.getMechanisms()) {
             if (mechanism instanceof OathMechanism) {
                 return (OathMechanism) mechanism;
@@ -107,16 +155,53 @@ public class OTPTokenHandler {
       throw new OTPException(ErrorHandler.OTPErrorCode.NO_OTP_REGISTERED);
     }
 
-    public static class OTPException extends Exception {
-        private final ErrorHandler.OTPErrorCode code;
+    private static void checkServerAndDeviceOtpState(PluginCall call, Context context, String uuid){
+        String sessionToken = FRSession.getCurrentSession().getSessionToken().getValue();
+        String cookie = "iPlanetDirectoryPro=" + sessionToken;
 
-        public OTPException(ErrorHandler.OTPErrorCode code) {
-            super(code.name());
-            this.code = code;
-        }
+        String url = "https://openam.dev.globalbank.com.pa/openam/json/realms/dev/users/"+uuid+"/devices/2fa/oath?_queryFilter=true";
 
-        public ErrorHandler.OTPErrorCode getCode() {
-            return code;
-        }
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("Cookie", cookie)
+                .addHeader("Accept", "application/json")
+                .get()
+                .build();
+
+        new Thread(() -> {
+            try (Response response = client.newCall(request).execute()) {
+                if (response.isSuccessful()) {
+
+                    String json = response.body().string();
+
+                    JSONObject jsonObject = new JSONObject(json);
+
+                    Integer resultCount = jsonObject.getInt("resultCount");
+
+                    boolean emptyTokenServer = (resultCount == 0);
+
+                    boolean emptyMechanism = validateExistMechanism(context);
+
+                    sendOtpStatusResult(call, emptyTokenServer, emptyMechanism);
+                } else {
+                    Log.e(TAG, "[OTPTokenHandler]:  Error HTTP: " + response.code());
+                    ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.HTTP_REQUEST_ERROR);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "[OTPTokenHandler]:  Exception: " + e.getMessage(), e);
+                ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.HTTP_REQUEST_ERROR);
+            }
+        }).start();
     }
+
+    private static void sendOtpStatusResult(PluginCall call, Boolean emptyTokenServer, Boolean emptyMechanism ){
+        JSObject result = new JSObject();
+
+        result.put("hasServerToken", !emptyTokenServer);
+        result.put("hasDeviceToken", !emptyMechanism);
+        call.resolve(result);
+        Log.d(TAG, "result: " + result);
+    }
+
 }
