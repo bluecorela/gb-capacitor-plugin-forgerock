@@ -47,7 +47,6 @@ repositories {
     mavenCentral()
 }
 
-
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':capacitor-android')
@@ -55,6 +54,7 @@ dependencies {
     implementation 'org.forgerock:forgerock-auth:4.7.0'
     implementation 'org.forgerock:forgerock-authenticator:4.7.0'
     implementation 'org.forgerock:forgerock-core:4.7.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

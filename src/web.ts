@@ -53,6 +53,10 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
     return Promise.resolve({ empty: true });
   }
 
+  hasRegisteredMechanism(): Promise<{empty: true}> {
+    return Promise.resolve({ empty: true });
+  }
+
   generateOTP(): Promise<{otp: ""}> {
     return Promise.resolve({ otp: "" });
   }

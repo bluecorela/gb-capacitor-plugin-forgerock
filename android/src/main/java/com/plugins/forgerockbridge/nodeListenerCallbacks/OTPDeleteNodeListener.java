@@ -20,6 +20,7 @@ import org.forgerock.android.auth.*;
 import java.util.List;
 
 import com.plugins.forgerockbridge.ErrorHandler;
+import com.plugins.forgerockbridge.ErrorHandler.OTPException;
 public class OTPDeleteNodeListener implements NodeListener<FRSession> {
 
     private static final String TAG = "ForgeRockBridge";
@@ -57,6 +58,23 @@ public class OTPDeleteNodeListener implements NodeListener<FRSession> {
 
     private void deleteOtpRegister() {
         try {
+
+            boolean isMechanismDeleted = deleteOnlyMechanism();
+            if(isMechanismDeleted){
+                finalStepToDeleteOTP();
+            }else{
+                ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.DELETE_OTP_MECHANISM_FAILED);
+            }
+
+
+        } catch (Exception e) {
+            Log.e(TAG, "[OTPDeleteNodeListener]  authenticate error", e);
+          ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.AUTHENTICATE_FAILED);
+        }
+    }
+
+    private boolean deleteOnlyMechanism() throws OTPException{
+        try {
             FRAClient fraClient = new FRAClient.FRAClientBuilder()
                     .withContext(this.context)
                     .start();
@@ -69,14 +87,18 @@ public class OTPDeleteNodeListener implements NodeListener<FRSession> {
                 if (!mechanisms.isEmpty()) {
                     Mechanism mechanism = mechanisms.get(0);
                     fraClient.removeMechanism(mechanism);
-                    finalStepToDeleteOTP();
+
+                    return true;
                 }
+                return false;
             }
 
         } catch (Exception e) {
             Log.e(TAG, "[OTPDeleteNodeListener]  authenticate error", e);
-          ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.AUTHENTICATE_FAILED);
+            throw new OTPException(ErrorHandler.OTPErrorCode.AUTHENTICATE_FAILED);
         }
+
+        return false;
     }
 
     private void finalStepToDeleteOTP(){
