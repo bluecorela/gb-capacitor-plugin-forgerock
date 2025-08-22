@@ -39,7 +39,7 @@ public class OTPNodeListener implements NodeListener<FRSession> {
     public void onException(@NonNull Exception e) {
       Log.d(TAG, "[OTPDeleteNodeListener]: public void onException(Exception e)" + e);
       pluginState.reset();
-      ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.AUTHENTICATE_FAILED);
+      ErrorHandler.reject(call, ErrorHandler.ErrorCode.AUTHENTICATE_FAILED);
     }
 
     @Override
@@ -72,12 +72,12 @@ public class OTPNodeListener implements NodeListener<FRSession> {
            if(hasHiddenValue){
                registerMechanism(uri, node);
            }else if (hasTextOutput) {
-             ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.CALLBACK_FAILED);
+             ErrorHandler.reject(call, ErrorHandler.ErrorCode.CALLBACK_FAILED);
              pluginState.reset();
            }
 
         } catch (Exception e) {
-          ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.CALLBACK_FAILED);
+          ErrorHandler.reject(call, ErrorHandler.ErrorCode.CALLBACK_FAILED);
           pluginState.reset();
         }
     }
@@ -107,7 +107,7 @@ public class OTPNodeListener implements NodeListener<FRSession> {
 
             @Override
             public void onException(Exception e) {
-              ErrorHandler.reject(call, ErrorHandler.OTPErrorCode.REGISTER_OTP_FAILED);
+              ErrorHandler.reject(call, ErrorHandler.ErrorCode.REGISTER_OTP_FAILED);
               pluginState.reset();
             }
         });
