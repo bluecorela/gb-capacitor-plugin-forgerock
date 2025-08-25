@@ -155,7 +155,15 @@ public class OTPTokenHandler {
         String sessionToken = FRSession.getCurrentSession().getSessionToken().getValue();
         String cookie = "iPlanetDirectoryPro=" + sessionToken;
 
-        String url = "https://openam.dev.globalbank.com.pa/openam/json/realms/dev/users/"+uuid+"/devices/2fa/oath?_queryFilter=true";
+        String base_url = call.getString("url");
+
+        if (base_url == null) {
+            Log.e(TAG, "[OTPTokenHandler]: Error in get url");
+            ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_JOURNEY);
+            return;
+        }
+
+        String url = base_url+"/"+uuid+"/devices/2fa/oath?_queryFilter=true";
 
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()

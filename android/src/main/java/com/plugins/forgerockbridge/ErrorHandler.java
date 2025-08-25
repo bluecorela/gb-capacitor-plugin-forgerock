@@ -15,8 +15,8 @@ public class ErrorHandler {
         CALLBACK_FAILED("FRE031"),
         REGISTER_OTP_FAILED("FRE032"),
         GETTING_USER_INFO("FRE033"),
-        HTTP_REQUEST_ERROR("FRE034");
-
+        HTTP_REQUEST_ERROR("FRE034"),
+        MISSING_PARAMETER("FRE035");
         public final String code;
         ErrorCode(String code) { this.code = code; }
     }
