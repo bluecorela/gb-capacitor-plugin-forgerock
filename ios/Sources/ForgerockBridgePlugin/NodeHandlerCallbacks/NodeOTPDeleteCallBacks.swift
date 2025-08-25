@@ -15,7 +15,7 @@ import Foundation
 
     func handle(token: Token?, node: Node?, error: Error?) {
         if let error = error {
-            ErrorHandler.reject(call, code: OTPErrorCode.authenticateFailed)
+            ErrorHandler.reject(call, code: ErrorCode.authenticateFailed)
             return
         }
 
@@ -31,7 +31,7 @@ import Foundation
     
     func deleteLocalMechanism (){
         guard let client = FRAClient.shared else {
-           ErrorHandler.reject(call, code: OTPErrorCode.withOutInitializedShared)
+           ErrorHandler.reject(call, code: ErrorCode.withOutInitializedShared)
            return
         }
     
@@ -44,7 +44,7 @@ import Foundation
                             try client.removeMechanism(mechanism: mechanism)
                             deletedCount += 1
                         } catch {
-                            ErrorHandler.reject(call, code: OTPErrorCode.deleteOTPFailed)
+                            ErrorHandler.reject(call, code: ErrorCode.deleteOTPFailed)
                         }
                     }
                 }
@@ -52,7 +52,7 @@ import Foundation
                 if deletedCount > 0 {
                     call.resolve(["status": "success", "deletedCount": deletedCount])
                 } else {
-                    ErrorHandler.reject(call, code: OTPErrorCode.noOtpRegistered)
+                    ErrorHandler.reject(call, code: ErrorCode.noOtpRegistered)
                 }
     }
 }

@@ -21,6 +21,7 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "validateOTP", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "deleteOTPRegister", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "generateOTP", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "hasRegisteredMechanism", returnType: CAPPluginReturnPromise),
         
     ]
     public var pendingNode: Node? = nil
@@ -67,15 +68,22 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         handler.startJourney(call, completion: cb.handle)
     }
 
+    @objc func validateOTP(_ call: CAPPluginCall) {
+        let handler = OTPTokenHandler(call: call, plugin: self)
+        handler.validateExistenceOTP(call: call);
+    }
+
+    @objc func hasRegisteredMechanism(_ call: CAPPluginCall) {
+        let handler = OTPTokenHandler(call: call, plugin: self)
+        handler.hasRegisteredMechanism(call);
+    }
+
     @objc func generateOTP(_ call: CAPPluginCall) {
         let handler = OTPTokenHandler(call: call, plugin: self)
         handler.generateOTP(call: call);
     }
     
-    @objc func validateOTP(_ call: CAPPluginCall) {
-        let handler = OTPTokenHandler(call: call, plugin: self)
-        handler.validateOTP(call: call);
-    }
+    
 
     
 }

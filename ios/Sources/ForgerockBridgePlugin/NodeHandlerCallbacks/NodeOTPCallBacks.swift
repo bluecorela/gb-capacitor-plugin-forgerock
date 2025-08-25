@@ -18,7 +18,7 @@ import Foundation
 
     func handle(token: Token?, node: Node?, error: Error?) {
         if let error = error {
-            ErrorHandler.reject(call, code: OTPErrorCode.authenticateFailed)
+            ErrorHandler.reject(call, code: .authenticateFailed)
             return
         }
 
@@ -30,7 +30,7 @@ import Foundation
 
 
     private func onCallbackReceived(_ node: Node) {
-        
+        FRLog.setLogLevel([.network,.info ]);
         var hasError = false;
         var messageError = "";
         var url: String? ;
@@ -49,16 +49,16 @@ import Foundation
         if(url != ""){
             self.createMechanismFromUri(otpURL: URL(string: url ?? "null") ?? URL(string: "null")!, node: node)
         }else if(hasError && url == ""){
-            ErrorHandler.reject(call, code: OTPErrorCode.callbackFailed)
+            ErrorHandler.reject(call, code: .callbackFailed)
         }else{
-            ErrorHandler.reject(call, code: OTPErrorCode.unknown_error)
+            ErrorHandler.reject(call, code: .unknown_error)
         }
        
     }
 
     private func createMechanismFromUri(otpURL: URL, node: Node){
         guard let fraClient = FRAClient.shared else {
-            ErrorHandler.reject(call, code: OTPErrorCode.withOutInitializedShared)
+            ErrorHandler.reject(call, code: .withOutInitializedShared)
             return
         }
 
@@ -68,7 +68,7 @@ import Foundation
                 self.finalStepToRegisterOTP(node: node)
             },
             onError: { error in
-                ErrorHandler.reject(self.call, code: OTPErrorCode.registerOTPFailed)
+                ErrorHandler.reject(self.call, code: .registerOTPFailed)
             }
         )
     }

@@ -49,7 +49,9 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
     throw new Error('Method not implemented.');
   }
 
-  validateOTP(): Promise<{empty: true}> {
+  validateOTP(_options: {
+    url: string;
+  }): Promise<{empty: true}> {
     return Promise.resolve({ empty: true });
   }
 

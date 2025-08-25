@@ -3,7 +3,7 @@ package com.plugins.forgerockbridge;
 import com.getcapacitor.PluginCall;
 
 public class ErrorHandler {
-    public enum OTPErrorCode {
+    public enum ErrorCode {
         UNKNOWN_ERROR("FRE000"),
         MISSING_JOURNEY("FRE024"),
         AUTHENTICATE_FAILED("FRE025"),
@@ -15,26 +15,26 @@ public class ErrorHandler {
         CALLBACK_FAILED("FRE031"),
         REGISTER_OTP_FAILED("FRE032"),
         GETTING_USER_INFO("FRE033"),
-        HTTP_REQUEST_ERROR("FRE034");
-
+        HTTP_REQUEST_ERROR("FRE034"),
+        MISSING_PARAMETER("FRE035");
         public final String code;
-        OTPErrorCode(String code) { this.code = code; }
+        ErrorCode(String code) { this.code = code; }
     }
 
 
-    public static void reject(PluginCall call, OTPErrorCode code) {
+    public static void reject(PluginCall call, ErrorCode code) {
       call.reject("", code.code);
     }
 
-    public static class OTPException extends Exception {
-      private final ErrorHandler.OTPErrorCode code;
+    public static class FRException extends Exception {
+      private final ErrorHandler.ErrorCode code;
 
-      public OTPException(ErrorHandler.OTPErrorCode code) {
+      public FRException(ErrorHandler.ErrorCode code) {
           super(code.name());
           this.code = code;
       }
       
-      public ErrorHandler.OTPErrorCode getCode() {
+      public ErrorHandler.ErrorCode getCode() {
           return code;
       }
     }
