@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import com.plugins.forgerockbridge.ErrorHandler.FRException;
 
 import java.util.List;
+import java.util.Objects;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -39,7 +40,7 @@ public class OTPTokenHandler {
           ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_JOURNEY);
             return;
         }
-      Log.e(TAG, "[OTPTokenHandler]: Esin");
+        Log.d(TAG, "[OTPTokenHandler]: Esin");
         FRSession.authenticate(context, journey, listener);
 
     }
@@ -47,11 +48,13 @@ public class OTPTokenHandler {
   public static void hasRegisteredMechanism(PluginCall call, Context context) {
         try {
             Log.d(TAG, "[OTPTokenHandler]: Sending existence of mechanism true or false");
-            
-            boolean emptyMechanism = validateExistMechanism(context);
+            JSObject response = validateExistMechanism(context);
+            boolean emptyMechanism = response.getBool("empty");
+
             JSObject result = new JSObject();
 
             result.put("empty", emptyMechanism);
+
             call.resolve(result);
         } catch (Exception e) {
           Log.e(TAG, "[OTPTokenHandler]: RETURN FRE026 ERROR from onException");
@@ -111,14 +114,40 @@ public class OTPTokenHandler {
         }
     }
 
-  private static boolean validateExistMechanism(Context context) throws FRException {
+  private static JSObject validateExistMechanism(Context context) throws FRException {
       try{
         FRAClient fraClient = initClient(context);
 
         List<Account> accounts = fraClient.getAllAccounts();
 
-        return accounts.isEmpty();
+        Mechanism found = null;
+
+          if (accounts != null && !accounts.isEmpty()) {
+              for (Account account : accounts) {
+                  List<Mechanism> mechanisms = account.getMechanisms();
+                  if (mechanisms != null && !mechanisms.isEmpty()) {
+                      found = mechanisms.get(0);
+                      break;
+                  }
+              }
+          }
+
+          JSObject result = new JSObject();
+          result.put("empty",  accounts.isEmpty());
+
+          if (found != null) {
+              JSObject mechJson = new JSObject();
+              mechJson.put("id", found.getId());
+              mechJson.put("accountName", found.getAccountName());
+              mechJson.put("issuer", found.getIssuer());
+              result.put("mechanism", mechJson);
+          } else {
+              result.put("mechanism", null);
+          }
+
+          return result;
       } catch (Exception e) {
+          Log.e(TAG, "error "+e);
           throw new FRException(ErrorHandler.ErrorCode.NO_ACCOUNTS_REGISTERED);
       }
     }
@@ -183,11 +212,18 @@ public class OTPTokenHandler {
 
                     Integer resultCount = jsonObject.getInt("resultCount");
 
-                    boolean emptyTokenServer = (resultCount == 0);
+                    boolean hasServerToken = !(resultCount == 0);
+                    JSObject result = validateExistMechanism(context);
+                    boolean hasDeviceToken = !result.getBool("empty");
 
-                    boolean emptyMechanism = validateExistMechanism(context);
+                    if(hasDeviceToken && hasServerToken){
+                        JSObject mechanism =result.getJSObject("mechanism");
 
-                    sendOtpStatusResult(call, emptyTokenServer, emptyMechanism);
+                        hasServerToken = isOtpConsistentWithServer(uuid, mechanism);
+                    }
+
+                    Log.d(TAG, hasServerToken+ "hasDeviceToken"+hasDeviceToken);
+                    sendOtpStatusResult(call, hasServerToken, hasDeviceToken);
                 } else {
                     Log.e(TAG, "[OTPTokenHandler]:  Error HTTP: " + response.code());
                     ErrorHandler.reject(call, ErrorHandler.ErrorCode.HTTP_REQUEST_ERROR);
@@ -199,13 +235,20 @@ public class OTPTokenHandler {
         }).start();
     }
 
-    private static void sendOtpStatusResult(PluginCall call, Boolean emptyTokenServer, Boolean emptyMechanism ){
+    private static boolean isOtpConsistentWithServer(String uuid , JSObject mechanism) {
+         if(Objects.equals(uuid, mechanism.getString("accountName"))){
+            return true;
+        }
+        return false;
+    }
+
+    private static void sendOtpStatusResult(PluginCall call, Boolean hasServerToken, Boolean hasDeviceToken ){
         JSObject result = new JSObject();
 
-        result.put("hasServerToken", !emptyTokenServer);
-        result.put("hasDeviceToken", !emptyMechanism);
-        call.resolve(result);
+        result.put("hasServerToken", hasServerToken);
+        result.put("hasDeviceToken", hasDeviceToken);
         Log.d(TAG, "result: " + result);
+        call.resolve(result);
     }
 
 }

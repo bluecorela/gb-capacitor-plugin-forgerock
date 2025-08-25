@@ -99,7 +99,7 @@ public class OTPNodeListener implements NodeListener<FRSession> {
                     result.put("status", "success");
                     result.put("message", "OTP registrado correctamente");
 
-
+                    Log.d(TAG, "status"+result);
                     call.resolve(result);
                     pluginState.reset();
 

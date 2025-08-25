@@ -58,12 +58,12 @@ class OTPTokenHandler {
         
         let sessionToken = FRSession.currentSession?.sessionToken?.value
         let cookie = "iPlanetDirectoryPro=\(sessionToken ?? "")"
-            print("headerValue",cookie);
-        
+         
         guard let base_url = call.getString("url"), !base_url.isEmpty else {
             ErrorHandler.reject(call, code: ErrorCode.missingParameter)
             return
         }
+
         let urlString = "\(base_url)/\(uuid)/devices/2fa/oath?_queryFilter=true"
         guard let url = URL(string: urlString) else {
                 ErrorHandler.reject(call, code: .httpRequestError)
@@ -99,6 +99,9 @@ class OTPTokenHandler {
                 ErrorHandler.reject(call, code: .httpRequestError)
                 return
             }
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("[Raw JSON Response]: \(jsonString)")
+            }
 
                 do {
                    
@@ -107,15 +110,21 @@ class OTPTokenHandler {
                     }
                     let decoded = try JSONDecoder().decode(DevicesResponse.self, from: data)
                     let resultCount = decoded.resultCount ?? 0
-                    let emptyTokenServer = (resultCount == 0)
+                    var hasServerToken = !(resultCount == 0)
 
-                    let emptyMechanism = try self.validateExistMechanism();
-                    print("hasDeviceToken", !emptyMechanism);
-                    print("hasServerToken", !emptyTokenServer);
+                    let mechanism = try self.validateExistMechanism();
+                    let hasDeviceToken = !mechanism.empty;
                     
+                    //If exist mechanism and token in server, has another validation. If mechanism and Server token are same.
+                    //If not match = in this case hasDeviceToken always will be true, because in case of create new Token, the mechanism must be removed first and this response say to front thats exist mechanis and need delete first. If match same are true
+                    if(hasDeviceToken && hasServerToken){
+                        hasServerToken = self.isOtpConsistentWithServer(uuid: uuid, mechanism: mechanism.mechanism )
+                    }
+                  
                     call.resolve([
-                        "hasServerToken": !emptyTokenServer,
-                        "hasDeviceToken": !emptyMechanism
+                        "hasServerToken": hasServerToken,
+                        "hasDeviceToken": hasDeviceToken,
+
                     ])
                 } catch {
  
@@ -123,13 +132,21 @@ class OTPTokenHandler {
                     ErrorHandler.reject(call, code: .httpRequestError)
                 }
             }.resume()
-        
 
+    }
+    
+    func isOtpConsistentWithServer(uuid: String, mechanism: Mechanism?) -> Bool{
+        if let mechanism = mechanism {
+            if(uuid ==  mechanism.accountName){
+                return true;
+            }
+        }
+        return false;
     }
     
     func hasRegisteredMechanism(_ call: CAPPluginCall) {
         do {
-            let empty = try validateExistMechanism()
+            let empty = try validateExistMechanism().empty
 
             var result = JSObject()
             result["empty"] = empty;
@@ -140,23 +157,23 @@ class OTPTokenHandler {
             ErrorHandler.reject(call, code: .unknown_error)
         }
     }
+     func validateExistMechanism() throws -> (empty: Bool, mechanism: Mechanism?) {
 
-
-    func validateExistMechanism() throws -> Bool {
-
-            if let accounts = fraClient?.getAllAccounts() {
-                var empty = true;
-                for account in accounts {
-                    for mech in account.mechanisms {
-                        empty = false;
+                if let accounts = fraClient?.getAllAccounts() {
+                    var empty = true;
+                    var mechanism: Mechanism? = nil
+                    for account in accounts {
+                        if let first = account.mechanisms.first {
+                           mechanism = first
+                           empty = false
+                           break
+                        }
                     }
+                    return (empty: empty, mechanism: mechanism)
+                }else {
+                    throw ErrorCode.noAccountsRegistered
                 }
-
-                return empty;
-            }else {
-                throw ErrorCode.noAccountsRegistered
-            }
-    }
+        }
     
     func generateOTP(call: CAPPluginCall) {
     do {
