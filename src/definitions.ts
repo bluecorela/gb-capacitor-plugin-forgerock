@@ -27,7 +27,7 @@ export interface ForgerockBridgePlugin {
   deleteOTPRegister(options: {
     journey: string;
   }): Promise<{ status: string }>;
-  validateOTP(): Promise<{
+  validateOTP(options: { url: string;}): Promise<{
     empty: boolean;
   }>;
   hasRegisteredMechanism(): Promise<{

@@ -1,6 +1,6 @@
 import Capacitor
 
-enum OTPErrorCode: String, Error {
+enum ErrorCode: String, Error {
     case unknown_error              = "FRE000"
     case missingJourney             = "FRE024"
     case authenticateFailed         = "FRE025"
@@ -10,11 +10,14 @@ enum OTPErrorCode: String, Error {
     case deleteOTPFailed            = "FRE029"
     case callbackFailed             = "FRE030"
     case registerOTPFailed          = "FRE031"
+    case gettingUserInfo            = "FRE033"
+    case httpRequestError           = "FRE034"
+    case missingParameter           = "FRE035"
 }
 
 struct ErrorHandler {
     
-    static func reject(_ call: CAPPluginCall, code: OTPErrorCode) {
+    static func reject(_ call: CAPPluginCall, code: ErrorCode) {
         call.reject("", code.rawValue )
     }
     
