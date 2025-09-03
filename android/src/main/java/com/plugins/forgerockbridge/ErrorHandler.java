@@ -16,7 +16,9 @@ public class ErrorHandler {
         REGISTER_OTP_FAILED("FRE032"),
         GETTING_USER_INFO("FRE033"),
         HTTP_REQUEST_ERROR("FRE034"),
-        MISSING_PARAMETER("FRE035");
+        MISSING_PARAMETER("FRE035"),
+        NO_PENDING_NODE("FR036"),
+        NO_QUESTION_FOUND("FR036");
         public final String code;
         ErrorCode(String code) { this.code = code; }
     }
@@ -24,6 +26,10 @@ public class ErrorHandler {
 
     public static void reject(PluginCall call, ErrorCode code) {
       call.reject("", code.code);
+    }
+
+    public static void reject(PluginCall call, ErrorCode code, String message) {
+      call.reject(message, code.code);
     }
 
     public static class FRException extends Exception {

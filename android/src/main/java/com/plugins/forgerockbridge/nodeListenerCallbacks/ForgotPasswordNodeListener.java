@@ -1,0 +1,133 @@
+package com.plugins.forgerockbridge.nodeListenerCallbacks;
+
+import android.content.Context;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+
+import com.getcapacitor.JSObject;
+import com.getcapacitor.PluginCall;
+import com.nimbusds.jose.shaded.gson.Gson;
+import com.nimbusds.jose.shaded.gson.GsonBuilder;
+import com.plugins.forgerockbridge.state.PluginState;
+
+import org.forgerock.android.auth.FRSession;
+import org.forgerock.android.auth.Node;
+import org.forgerock.android.auth.NodeListener;
+import org.forgerock.android.auth.callback.Callback;
+import org.forgerock.android.auth.callback.NameCallback;
+import org.forgerock.android.auth.callback.TextOutputCallback;
+import org.forgerock.android.auth.callback.PasswordCallback;
+
+import com.plugins.forgerockbridge.ErrorHandler;
+
+
+public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
+
+    private static final String TAG = "ForgeRockBridge";
+    private final PluginCall call;
+    private final Context context;
+    private final PluginState pluginState;
+
+    public ForgotPasswordNodeListener(PluginCall call, Context context, PluginState pluginState) {
+        this.call = call;
+        this.context = context;
+        this.pluginState = pluginState;
+    }
+    @Override
+    public void onException(@NonNull Exception e) {
+      Log.d(TAG, "[ForgotPasswordNodeListener]: public void onException(Exception e)" + e);
+      pluginState.reset();
+      ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_PARAMETER);
+    }
+
+    @Override
+    public void onSuccess(FRSession frSession) {
+        Log.d(TAG, "[ForgotPasswordNodeListener: onSuccess] call method onSuccess");
+        pluginState.reset();
+        call.resolve();
+    }
+
+    @Override
+    public void onCallbackReceived(Node node) {
+
+        try {
+            Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived]: call method onCallbackReceived");
+            
+            final String username = call.getString("username", null);
+            final String answer = call.getString("answer", null);
+            
+            boolean hasName = false;
+            boolean hasTextOutput = false;
+            boolean hasQuestion = false;
+            String errorMessage = null;
+
+            for (Callback cb : node.getCallbacks()) {
+                if (cb instanceof TextOutputCallback) {
+                    errorMessage = ((TextOutputCallback) cb).getMessage();
+                    Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] errorMessage: "+ errorMessage);
+                    pluginState.setLastErrorMessage(errorMessage);
+                    hasTextOutput = true;
+                } else if (cb instanceof NameCallback) {
+                    Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] Has NameCallBack");
+                    hasName = true;
+                } else if (cb instanceof PasswordCallback) {
+                    hasQuestion = true;
+                }
+            }
+
+            //Comprobar campos errores regresado de ForgeRock y devolverlos al front-end
+            if (hasTextOutput) {
+                JSObject result = new JSObject();
+                result.put("errorMessage", errorMessage);
+                call.resolve(result);
+                return;
+            }
+
+            //Paso 1 - comprobar la existencia del campo para el usuario y enviarlo
+            if (hasName) {
+                for (Callback cb : node.getCallbacks()) {
+                    if (cb instanceof NameCallback) {
+                        ((NameCallback) cb).setName(username);
+                    } 
+                }
+                Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] Sending credentials again via next()");
+                node.next(context, this);
+                return;
+            }
+
+            //Paso 2 luego de verificar el usuario, guardar la pregunta devuelta para enviarla al front-end
+            if (hasQuestion && answer == null) {
+                pluginState.setPendingNode(node);
+                JSObject out = new JSObject()
+                    .put("status", "verified_username");
+                call.resolve(out);
+                return;
+            }
+
+
+
+        } catch (Exception e) {
+            Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] error catch (Exception e)");
+            call.reject("Error processing node: " + e.getMessage(), e);
+        }
+
+
+        for (Callback cb : node.getCallbacks()) {
+            Log.d("ForgerockBridgePlugin", "Callback: " + cb.getClass().getSimpleName() + " -> " + cb.toString());
+        }
+
+        try {
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            String nodeJson = gson.toJson(node);
+            Log.d(TAG, "Node completo: " + nodeJson);
+        } catch (Exception e) {
+            Log.e(TAG, "Error serializando Node: " + e.getMessage(), e);
+        }
+
+        JSObject out = new JSObject()
+        .put("status", "Unhandled node state.");
+        call.resolve(out);
+
+    }
+}

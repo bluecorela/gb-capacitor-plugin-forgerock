@@ -6,6 +6,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.plugins.forgerockbridge.nodeListenerCallbacks.ForgotPasswordNodeListener;
 import com.plugins.forgerockbridge.state.PluginState;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.OTPNodeListener;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.OTPDeleteNodeListener;
@@ -67,6 +68,25 @@ public class ForgerockBridgePlugin extends Plugin {
     @PluginMethod
     public void generateOTP(PluginCall call) {
         OTPTokenHandler.generateOTP(call, context);
+    }
+
+    @PluginMethod
+    public void forgotPassword(PluginCall call) {
+        ForgotPasswordHandler.startForgotPasswordJourney(call, context, new ForgotPasswordNodeListener(call, context, pluginState));
+    }
+
+    @PluginMethod
+    public void getQuestionForgotPassword(PluginCall call) {
+        ForgotPasswordHandler.getSecurityQuestion(call, pluginState);
+    }
+
+    @PluginMethod
+    public void answerQuestionForgotPassword(PluginCall call) {
+        ForgotPasswordHandler.answerQuestionForgotPassword(
+            call,
+            pluginState,
+            context
+        );
     }
 
 }
