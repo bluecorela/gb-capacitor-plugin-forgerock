@@ -63,7 +63,7 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
     return Promise.resolve({ otp: "" });
   }
 
-  forgotPassword(_options: {
+  initForgotPassword(_options: {
     journey: string; username: string;
   }): Promise<void> {
     return Promise.resolve();

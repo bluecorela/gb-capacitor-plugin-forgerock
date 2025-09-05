@@ -36,7 +36,7 @@ export interface ForgerockBridgePlugin {
   generateOTP(): Promise<{
     otp: string;
   }>;
-  forgotPassword(options: { journey: string; username?: string;}): Promise<void>;
+  initForgotPassword(options: { journey: string; username?: string;}): Promise<void>;
   getQuestionForgotPassword(): Promise<{question: string}>;
   answerQuestionForgotPassword(options: {answer: string}) : Promise<void>;
 }

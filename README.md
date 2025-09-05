@@ -31,7 +31,12 @@ npm run build
 * [`getAccessToken()`](#getaccesstoken)
 * [`initializeOTPRegister(...)`](#initializeotpregister)
 * [`deleteOTPRegister(...)`](#deleteotpregister)
-* [`validateOTP()`](#validateotp)
+* [`validateOTP(...)`](#validateotp)
+* [`hasRegisteredMechanism()`](#hasregisteredmechanism)
+* [`generateOTP()`](#generateotp)
+* [`forgotPassword(...)`](#forgotpassword)
+* [`getQuestionForgotPassword()`](#getquestionforgotpassword)
+* [`answerQuestionForgotPassword(...)`](#answerquestionforgotpassword)
 
 </docgen-index>
 
@@ -129,13 +134,76 @@ deleteOTPRegister(options: { journey: string; }) => Promise<{ status: string; }>
 --------------------
 
 
-### validateOTP()
+### validateOTP(...)
 
 ```typescript
-validateOTP() => Promise<{ empty: boolean; }>
+validateOTP(options: { url: string; }) => Promise<{ empty: boolean; }>
+```
+
+| Param         | Type                          |
+| ------------- | ----------------------------- |
+| **`options`** | <code>{ url: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ empty: boolean; }&gt;</code>
+
+--------------------
+
+
+### hasRegisteredMechanism()
+
+```typescript
+hasRegisteredMechanism() => Promise<{ empty: boolean; }>
 ```
 
 **Returns:** <code>Promise&lt;{ empty: boolean; }&gt;</code>
+
+--------------------
+
+
+### generateOTP()
+
+```typescript
+generateOTP() => Promise<{ otp: string; }>
+```
+
+**Returns:** <code>Promise&lt;{ otp: string; }&gt;</code>
+
+--------------------
+
+
+### forgotPassword(...)
+
+```typescript
+forgotPassword(options: { journey: string; username?: string; }) => Promise<void>
+```
+
+| Param         | Type                                                 |
+| ------------- | ---------------------------------------------------- |
+| **`options`** | <code>{ journey: string; username?: string; }</code> |
+
+--------------------
+
+
+### getQuestionForgotPassword()
+
+```typescript
+getQuestionForgotPassword() => Promise<{ question: string; }>
+```
+
+**Returns:** <code>Promise&lt;{ question: string; }&gt;</code>
+
+--------------------
+
+
+### answerQuestionForgotPassword(...)
+
+```typescript
+answerQuestionForgotPassword(options: { answer: string; }) => Promise<void>
+```
+
+| Param         | Type                             |
+| ------------- | -------------------------------- |
+| **`options`** | <code>{ answer: string; }</code> |
 
 --------------------
 

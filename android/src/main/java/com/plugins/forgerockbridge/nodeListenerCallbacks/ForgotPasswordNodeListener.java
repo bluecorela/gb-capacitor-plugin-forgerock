@@ -60,7 +60,16 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
             boolean hasName = false;
             boolean hasTextOutput = false;
             boolean hasQuestion = false;
+            boolean hasValidatedPassword = false;
             String errorMessage = null;
+
+            try {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                String nodeJson = gson.toJson(node);
+                Log.d(TAG, "Node completo: " + nodeJson);
+            } catch (Exception e) {
+                Log.e(TAG, "Error serializando Node: " + e.getMessage(), e);
+            }
 
             for (Callback cb : node.getCallbacks()) {
                 if (cb instanceof TextOutputCallback) {
@@ -105,8 +114,6 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
                 return;
             }
 
-
-
         } catch (Exception e) {
             Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] error catch (Exception e)");
             call.reject("Error processing node: " + e.getMessage(), e);
@@ -115,14 +122,6 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
 
         for (Callback cb : node.getCallbacks()) {
             Log.d("ForgerockBridgePlugin", "Callback: " + cb.getClass().getSimpleName() + " -> " + cb.toString());
-        }
-
-        try {
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            String nodeJson = gson.toJson(node);
-            Log.d(TAG, "Node completo: " + nodeJson);
-        } catch (Exception e) {
-            Log.e(TAG, "Error serializando Node: " + e.getMessage(), e);
         }
 
         JSObject out = new JSObject()

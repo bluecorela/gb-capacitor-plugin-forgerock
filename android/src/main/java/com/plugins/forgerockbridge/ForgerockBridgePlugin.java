@@ -71,7 +71,7 @@ public class ForgerockBridgePlugin extends Plugin {
     }
 
     @PluginMethod
-    public void forgotPassword(PluginCall call) {
+    public void initForgotPassword(PluginCall call) {
         ForgotPasswordHandler.startForgotPasswordJourney(call, context, new ForgotPasswordNodeListener(call, context, pluginState));
     }
 
@@ -86,6 +86,15 @@ public class ForgerockBridgePlugin extends Plugin {
             call,
             pluginState,
             context
+        );
+    }
+
+    @PluginMethod
+    public void changePasswordForgotPassword(PluginCall call) {
+        ForgotPasswordHandler.changePasswordForgotPassword(
+                call,
+                pluginState,
+                context
         );
     }
 

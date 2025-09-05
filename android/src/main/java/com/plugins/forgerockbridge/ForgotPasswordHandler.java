@@ -110,10 +110,15 @@ public class ForgotPasswordHandler {
         for (Callback cb : pending.getCallbacks()) {
             if (cb instanceof PasswordCallback) {
                 ((PasswordCallback) cb).setPassword(answer.toCharArray());
+                break;
             } 
         }
 
         pending.next(context, new ForgotPasswordNodeListener(call, context, state));
+
+    }
+
+    public static void changePasswordForgotPassword (PluginCall call, PluginState state, Context context ) {
 
     }
 
