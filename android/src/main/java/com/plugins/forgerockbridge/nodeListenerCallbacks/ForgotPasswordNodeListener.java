@@ -114,19 +114,15 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
                 return;
             }
 
+
+            JSObject out = new JSObject()
+            .put("status", "Unhandled node state.");
+            call.resolve(out);
+
         } catch (Exception e) {
             Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] error catch (Exception e)");
             call.reject("Error processing node: " + e.getMessage(), e);
         }
-
-
-        for (Callback cb : node.getCallbacks()) {
-            Log.d("ForgerockBridgePlugin", "Callback: " + cb.getClass().getSimpleName() + " -> " + cb.toString());
-        }
-
-        JSObject out = new JSObject()
-        .put("status", "Unhandled node state.");
-        call.resolve(out);
 
     }
 }
