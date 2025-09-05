@@ -22,7 +22,8 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "deleteOTPRegister", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "generateOTP", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "hasRegisteredMechanism", returnType: CAPPluginReturnPromise),
-        
+        CAPPluginMethod(name: "initForgotPassword", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getQuestionForgotPassword", returnType: CAPPluginReturnPromise),
     ]
     public var pendingNode: Node? = nil
     public var didSubmitConfirmation = false
@@ -83,7 +84,16 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         handler.generateOTP(call: call);
     }
     
-    
+     @objc func initForgotPassword(_ call: CAPPluginCall) {
+        let handler = ForgotPasswordHandler(call: call, plugin: self)
+        let cb = NodeForgotPasswordCallbacks(call: call, plugin: self)
+        handler.startForgotPasswordJourney(call, completion: cb.handle);
+    }
+
+    @objc func getQuestionForgotPassword(_ call: CAPPluginCall) {
+        let handler = ForgotPasswordHandler(call: call, plugin: self)
+        handler.getSecurityQuestion(call);
+    }
 
     
 }

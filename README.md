@@ -34,7 +34,7 @@ npm run build
 * [`validateOTP(...)`](#validateotp)
 * [`hasRegisteredMechanism()`](#hasregisteredmechanism)
 * [`generateOTP()`](#generateotp)
-* [`forgotPassword(...)`](#forgotpassword)
+* [`initForgotPassword(...)`](#initforgotpassword)
 * [`getQuestionForgotPassword()`](#getquestionforgotpassword)
 * [`answerQuestionForgotPassword(...)`](#answerquestionforgotpassword)
 
@@ -171,10 +171,10 @@ generateOTP() => Promise<{ otp: string; }>
 --------------------
 
 
-### forgotPassword(...)
+### initForgotPassword(...)
 
 ```typescript
-forgotPassword(options: { journey: string; username?: string; }) => Promise<void>
+initForgotPassword(options: { journey: string; username?: string; }) => Promise<void>
 ```
 
 | Param         | Type                                                 |
