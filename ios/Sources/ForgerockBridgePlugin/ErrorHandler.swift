@@ -13,12 +13,18 @@ enum ErrorCode: String, Error {
     case gettingUserInfo            = "FRE033"
     case httpRequestError           = "FRE034"
     case missingParameter           = "FRE035"
+    case noPendingNode              = "FRE036"
+    case noQuestionFound            = "FRE037"
 }
 
 struct ErrorHandler {
     
     static func reject(_ call: CAPPluginCall, code: ErrorCode) {
         call.reject("", code.rawValue )
+    }
+    
+    static func reject(_ call: CAPPluginCall, code: ErrorCode, message:String) {
+        call.reject(message, code.rawValue )
     }
     
 }

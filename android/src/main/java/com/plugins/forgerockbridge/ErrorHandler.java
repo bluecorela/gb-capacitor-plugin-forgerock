@@ -17,8 +17,8 @@ public class ErrorHandler {
         GETTING_USER_INFO("FRE033"),
         HTTP_REQUEST_ERROR("FRE034"),
         MISSING_PARAMETER("FRE035"),
-        NO_PENDING_NODE("FR036"),
-        NO_QUESTION_FOUND("FR036");
+        NO_PENDING_NODE("FRE036"),
+        NO_QUESTION_FOUND("FRE037");
         public final String code;
         ErrorCode(String code) { this.code = code; }
     }

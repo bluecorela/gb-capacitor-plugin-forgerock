@@ -44,7 +44,7 @@ class ForgotPasswordHandler {
 
         guard let pending = self.plugin.pendingNode else {
             print("[getSecurityQuestion] NO PENDING NODE SAVE")
-            call.reject("NO PENDING NODE SAVE")
+            ErrorHandler.reject(call, code: .noPendingNode, message: "NO PENDING NODE SAVE")
             return
         }
         
@@ -56,9 +56,9 @@ class ForgotPasswordHandler {
         }
         
         guard let q = question else {
-                    print("[getSecurityQuestion] NO QUESTION FOUND")
-                    call.reject("NO QUESTION FOUND")
-                    return
+            print("[getSecurityQuestion] NO QUESTION FOUND")
+            ErrorHandler.reject(call, code: .noQuestionFound, message: "NO QUESTION FOUND")
+            return
         }
         
         let out: [String: Any] = [
@@ -67,7 +67,5 @@ class ForgotPasswordHandler {
                 
         print("[getSecurityQuestion] Sending question")
         call.resolve(out)
-
     }
-
 }

@@ -114,6 +114,14 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
                 return;
             }
 
+            //Paso 3 pregunta contestada correctamente, poner el node en pending para seguir el flujo
+            if (hasQuestion && answer != null) {
+                pluginState.setPendingNode(node);
+                JSObject out = new JSObject()
+                    .put("status", "question_succes");
+                call.resolve(out);
+                return;
+            }
 
             JSObject out = new JSObject()
             .put("status", "Unhandled node state.");
