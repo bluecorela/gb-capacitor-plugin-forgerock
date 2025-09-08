@@ -7,8 +7,6 @@ import androidx.annotation.NonNull;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
-import com.nimbusds.jose.shaded.gson.Gson;
-import com.nimbusds.jose.shaded.gson.GsonBuilder;
 import com.plugins.forgerockbridge.state.PluginState;
 
 import org.forgerock.android.auth.FRSession;
@@ -63,16 +61,7 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
             boolean hasName = false;
             boolean hasTextOutput = false;
             boolean hasQuestion = false;
-            boolean hasValidatedPassword = false;
             String errorMessage = null;
-
-            try {
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                String nodeJson = gson.toJson(node);
-                Log.d(TAG, "Node completo: " + nodeJson);
-            } catch (Exception e) {
-                Log.e(TAG, "Error serializando Node: " + e.getMessage(), e);
-            }
 
             for (Callback cb : node.getCallbacks()) {
                 if (cb instanceof TextOutputCallback) {
