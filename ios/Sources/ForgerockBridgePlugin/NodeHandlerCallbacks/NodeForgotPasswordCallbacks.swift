@@ -30,6 +30,7 @@ import Foundation
     private func onCallbackReceived(_ node: Node) {
         let activeNode = plugin.pendingNode ?? node
         let username = call.getString("username")
+        let answer = call.getString("answer")
 
         var hasName = false
         var hasTextOutput = false
@@ -66,10 +67,19 @@ import Foundation
             return
         }
 
-        if (hasQuestion) {
+        if (hasQuestion && answer == nil) {
             plugin.pendingNode = activeNode
             call.resolve(["status": "verified_username"])
-            return;
+            return
+        }
+    
+        
+        if (answer != nil) {
+            plugin.pendingNode = activeNode
+            call.resolve([
+                "status": "question_success"
+            ])
+            return
         }
 
         call.resolve(["status": "Unhandled node state."])

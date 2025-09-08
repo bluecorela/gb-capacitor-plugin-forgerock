@@ -35,13 +35,6 @@ class ForgotPasswordHandler {
         
         var question: String? = nil
 
-        if let node = self.plugin.pendingNode {
-            print("Node recibido con \(node.callbacks.count) callbacks:")
-            for (index, callback) in node.callbacks.enumerated() {
-                print("Callback #\(index): \(type(of: callback)) -> \(callback)")
-            }
-        }
-
         guard let pending = self.plugin.pendingNode else {
             print("[getSecurityQuestion] NO PENDING NODE SAVE")
             ErrorHandler.reject(call, code: .noPendingNode, message: "NO PENDING NODE SAVE")
@@ -49,9 +42,9 @@ class ForgotPasswordHandler {
         }
         
         for (_, callback) in pending.callbacks.enumerated() {
-                    if let passwordCallback = callback as? PasswordCallback {
-                        question = passwordCallback.prompt
-                        break
+            if let passwordCallback = callback as? PasswordCallback {
+                question = passwordCallback.prompt
+                break
             }
         }
         
@@ -67,5 +60,30 @@ class ForgotPasswordHandler {
                 
         print("[getSecurityQuestion] Sending question")
         call.resolve(out)
+    }
+    
+    func answerQuestionForgotPassword (_ call: CAPPluginCall,completion: @escaping NodeCompletion<Token> ) {
+        
+        guard let pending = self.plugin.pendingNode else {
+            print("[answerQuestionForgotPassword] NO PENDING NODE SAVE")
+            ErrorHandler.reject(call, code: .noPendingNode, message: "NO PENDING NODE SAVE")
+            return
+        }
+        
+        guard let answer = call.getString("answer"), !answer.isEmpty else {
+            print("[answerQuestionForgotPassword] MISSING PARAMETER answer")
+            ErrorHandler.reject(call, code: ErrorCode.missingParameter, message: "MISSING PARAMETER answer")
+            return
+        }
+        
+        for (_, callback) in pending.callbacks.enumerated() {
+            if let passwordCallback = callback as? PasswordCallback {
+                passwordCallback.setValue(answer)
+                break
+            }
+        }
+        
+        pending.next(completion: completion)
+        
     }
 }
