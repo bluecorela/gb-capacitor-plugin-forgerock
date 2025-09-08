@@ -6,37 +6,18 @@ import android.util.Log;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
 
-import org.forgerock.android.auth.Account;
-import org.forgerock.android.auth.FRAClient;
-import org.forgerock.android.auth.FRListener;
+
 import org.forgerock.android.auth.FRSession;
-import org.forgerock.android.auth.FRUser;
-import org.forgerock.android.auth.Mechanism;
+
 import org.forgerock.android.auth.NodeListener;
-import org.forgerock.android.auth.OathMechanism;
-import org.forgerock.android.auth.OathTokenCode;
-import org.forgerock.android.auth.UserInfo;
+
 import org.forgerock.android.auth.callback.PasswordCallback;
 import org.forgerock.android.auth.callback.ValidatedPasswordCallback;
-import org.forgerock.android.auth.exception.AuthenticatorException;
 import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.callback.Callback;
-import org.forgerock.android.auth.callback.HiddenValueCallback;
-import org.forgerock.android.auth.callback.TextOutputCallback;
 
-import org.json.JSONObject;
-
-import com.plugins.forgerockbridge.ErrorHandler.FRException;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.ForgotPasswordNodeListener;
 import com.plugins.forgerockbridge.state.PluginState;
-
-
-import java.util.List;
-import java.util.Objects;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 public class ForgotPasswordHandler {
     private static final String TAG = "ForgeRockBridge";
@@ -107,7 +88,6 @@ public class ForgotPasswordHandler {
             return;
         }
 
-        Log.d(TAG, "[ForgotPasswordHandler: answerQuestionForgotPassword] answer: " + answer);
 
         for (Callback cb : pending.getCallbacks()) {
             if (cb instanceof PasswordCallback) {
@@ -121,9 +101,9 @@ public class ForgotPasswordHandler {
     }
 
     public static void changePasswordForgotPassword (PluginCall call, PluginState state, Context context ) {
-        Log.d(TAG, "[ForgotPasswordHandler: changePasswordForgotPassword]: CALL METHOD");
+        Log.d(TAG, "[ForgotPasswordHandler: changePasswordForgotPassword]: CALL METHOD changePasswordForgotPassword");
         Node pending = state.getPendingNode();
-        String password = call.getString("password");
+        String password = call.getString("password", null);
 
         if (pending == null) {
             Log.e(TAG, "[ForgotPasswordHandler: changePasswordForgotPassword]: NO PENDING NODE SAVE");
@@ -139,16 +119,12 @@ public class ForgotPasswordHandler {
 
         for (Callback cb : pending.getCallbacks()) {
             if (cb instanceof ValidatedPasswordCallback) {
-                Log.d(TAG, "[ForgotPasswordHandler: changePasswordForgotPassword]: CALLBACK VALIDATED PASSWORD DETECTADO");
                 ((ValidatedPasswordCallback) cb).setPassword(password.toCharArray());
                 break;
             }
         }
 
-        return;
-        //pending.next(context, new ForgotPasswordNodeListener(call, context, state));
-
+        pending.next(context, new ForgotPasswordNodeListener(call, context, state));
     }
-
 
 }

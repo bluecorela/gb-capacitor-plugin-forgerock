@@ -38,13 +38,16 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
     public void onException(@NonNull Exception e) {
       Log.d(TAG, "[ForgotPasswordNodeListener]: public void onException(Exception e)" + e);
       pluginState.reset();
-      ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_PARAMETER);
+      ErrorHandler.reject(call, ErrorHandler.ErrorCode.UNKNOWN_ERROR, "UNKNOW ERROR");
     }
 
     @Override
     public void onSuccess(FRSession frSession) {
         Log.d(TAG, "[ForgotPasswordNodeListener: onSuccess] call method onSuccess");
         pluginState.reset();
+        JSObject result = new JSObject();
+        result.put("status", "success");
+        result.put("message", "Password changed successfully");
         call.resolve();
     }
 
@@ -78,9 +81,10 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
                     pluginState.setLastErrorMessage(errorMessage);
                     hasTextOutput = true;
                 } else if (cb instanceof NameCallback) {
-                    Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] Has NameCallBack");
+                    Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] Has NameCallBack node");
                     hasName = true;
                 } else if (cb instanceof PasswordCallback) {
+                    Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] Has PasswordCallback node");
                     hasQuestion = true;
                 }
             }
@@ -88,7 +92,8 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
             //Comprobar campos errores regresado de ForgeRock y devolverlos al front-end
             if (hasTextOutput) {
                 JSObject result = new JSObject();
-                result.put("errorMessage", errorMessage);
+                result.put("status", "error");
+                result.put("message", errorMessage);
                 call.resolve(result);
                 return;
             }
@@ -109,22 +114,25 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
             if (hasQuestion && answer == null) {
                 pluginState.setPendingNode(node);
                 JSObject out = new JSObject()
-                    .put("status", "verified_username");
+                    .put("status", "success")
+                    .put("message", "verified username");
                 call.resolve(out);
                 return;
             }
 
             //Paso 3 pregunta contestada correctamente, poner el node en pending para seguir el flujo
-            if (hasQuestion && answer != null) {
+            if (answer != null) {
                 pluginState.setPendingNode(node);
                 JSObject out = new JSObject()
-                    .put("status", "question_succes");
+                    .put("status", "success")
+                    .put("message", "question success");
                 call.resolve(out);
                 return;
             }
 
             JSObject out = new JSObject()
-            .put("status", "Unhandled node state.");
+            .put("status", "error")
+            .put("message", "Unhandled node state");
             call.resolve(out);
 
         } catch (Exception e) {

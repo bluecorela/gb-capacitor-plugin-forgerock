@@ -37,6 +37,7 @@ npm run build
 * [`initForgotPassword(...)`](#initforgotpassword)
 * [`getQuestionForgotPassword()`](#getquestionforgotpassword)
 * [`answerQuestionForgotPassword(...)`](#answerquestionforgotpassword)
+* [`changePasswordForgotPassword(...)`](#changepasswordforgotpassword)
 
 </docgen-index>
 
@@ -204,6 +205,19 @@ answerQuestionForgotPassword(options: { answer: string; }) => Promise<void>
 | Param         | Type                             |
 | ------------- | -------------------------------- |
 | **`options`** | <code>{ answer: string; }</code> |
+
+--------------------
+
+
+### changePasswordForgotPassword(...)
+
+```typescript
+changePasswordForgotPassword(options: { password: string; }) => Promise<void>
+```
+
+| Param         | Type                               |
+| ------------- | ---------------------------------- |
+| **`options`** | <code>{ password: string; }</code> |
 
 --------------------
 
