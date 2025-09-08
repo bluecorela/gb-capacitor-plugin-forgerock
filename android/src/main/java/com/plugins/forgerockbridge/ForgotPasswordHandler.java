@@ -17,6 +17,7 @@ import org.forgerock.android.auth.OathMechanism;
 import org.forgerock.android.auth.OathTokenCode;
 import org.forgerock.android.auth.UserInfo;
 import org.forgerock.android.auth.callback.PasswordCallback;
+import org.forgerock.android.auth.callback.ValidatedPasswordCallback;
 import org.forgerock.android.auth.exception.AuthenticatorException;
 import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.callback.Callback;
@@ -45,13 +46,13 @@ public class ForgotPasswordHandler {
         String journey = call.getString("journey");
         String username = call.getString("username");
 
-        if (journey == null) {
+        if (journey == null || journey.trim().isEmpty()) {
             Log.e(TAG, "[ForgotPasswordHandler: startForgotPasswordJourney ]: Error in get Journey");
             ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_JOURNEY);
             return;
         }
 
-         if (username == null) {
+         if (username == null || username.trim().isEmpty()) {
             Log.e(TAG, "[ForgotPasswordHandler: startForgotPasswordJourney]: Error in get the username");
             ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_JOURNEY);
             return;
@@ -78,7 +79,7 @@ public class ForgotPasswordHandler {
             }
         }
 
-        if (question == null) {
+        if (question == null || question.trim().isEmpty()) {
             Log.e(TAG, "[ForgotPasswordHandler: getSecurityQuestion]: NO QUESTION FOUND");
             ErrorHandler.reject(call, ErrorHandler.ErrorCode.NO_QUESTION_FOUND, "NO QUESTION FOUND");
             return;
@@ -101,6 +102,7 @@ public class ForgotPasswordHandler {
         }
 
         if (answer == null || answer.trim().isEmpty()) {
+            Log.e(TAG, "[ForgotPasswordHandler: answerQuestionForgotPassword]: MISSING ANSWER");
             ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_PARAMETER, "Missing answer");
             return;
         }
@@ -119,6 +121,32 @@ public class ForgotPasswordHandler {
     }
 
     public static void changePasswordForgotPassword (PluginCall call, PluginState state, Context context ) {
+        Log.d(TAG, "[ForgotPasswordHandler: changePasswordForgotPassword]: CALL METHOD");
+        Node pending = state.getPendingNode();
+        String password = call.getString("password");
+
+        if (pending == null) {
+            Log.e(TAG, "[ForgotPasswordHandler: changePasswordForgotPassword]: NO PENDING NODE SAVE");
+            ErrorHandler.reject(call, ErrorHandler.ErrorCode.NO_PENDING_NODE, "NO PENDING NODE SAVE");
+            return;
+        }
+
+        if (password == null || password.trim().isEmpty()) {
+            Log.e(TAG, "[ForgotPasswordHandler: changePasswordForgotPassword]: MISSING PASSWORD");
+            ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_PARAMETER, "Missing password");
+            return;
+        }
+
+        for (Callback cb : pending.getCallbacks()) {
+            if (cb instanceof ValidatedPasswordCallback) {
+                Log.d(TAG, "[ForgotPasswordHandler: changePasswordForgotPassword]: CALLBACK VALIDATED PASSWORD DETECTADO");
+                ((ValidatedPasswordCallback) cb).setPassword(password.toCharArray());
+                break;
+            }
+        }
+
+        return;
+        //pending.next(context, new ForgotPasswordNodeListener(call, context, state));
 
     }
 

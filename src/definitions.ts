@@ -39,6 +39,7 @@ export interface ForgerockBridgePlugin {
   initForgotPassword(options: { journey: string; username?: string;}): Promise<void>;
   getQuestionForgotPassword(): Promise<{question: string}>;
   answerQuestionForgotPassword(options: {answer: string}) : Promise<void>;
+  changePasswordForgotPassword(options: {password: string}) : Promise<void>;
 }
 
 const ForgerockBridge = registerPlugin<ForgerockBridgePlugin>('ForgerockBridge');

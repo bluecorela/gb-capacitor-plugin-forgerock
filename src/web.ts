@@ -73,7 +73,15 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
     return Promise.resolve({question: ""});
   }
 
-  answerQuestionForgotPassword(): Promise<void> {
+  answerQuestionForgotPassword(_options: {
+    answer: string;
+  }): Promise<void> {
+    return Promise.resolve();
+  }
+
+  changePasswordForgotPassword(_options: {
+    password: string;
+  }): Promise<void> {
     return Promise.resolve();
   }
   
