@@ -175,12 +175,14 @@ generateOTP() => Promise<{ otp: string; }>
 ### initForgotPassword(...)
 
 ```typescript
-initForgotPassword(options: { journey: string; username?: string; }) => Promise<void>
+initForgotPassword(options: { journey: string; username?: string; }) => Promise<{ status: string; message: string; }>
 ```
 
 | Param         | Type                                                 |
 | ------------- | ---------------------------------------------------- |
 | **`options`** | <code>{ journey: string; username?: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ status: string; message: string; }&gt;</code>
 
 --------------------
 
@@ -199,12 +201,14 @@ getQuestionForgotPassword() => Promise<{ question: string; }>
 ### answerQuestionForgotPassword(...)
 
 ```typescript
-answerQuestionForgotPassword(options: { answer: string; }) => Promise<void>
+answerQuestionForgotPassword(options: { answer: string; }) => Promise<{ status: string; message: string; }>
 ```
 
 | Param         | Type                             |
 | ------------- | -------------------------------- |
 | **`options`** | <code>{ answer: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ status: string; message: string; }&gt;</code>
 
 --------------------
 
@@ -212,12 +216,14 @@ answerQuestionForgotPassword(options: { answer: string; }) => Promise<void>
 ### changePasswordForgotPassword(...)
 
 ```typescript
-changePasswordForgotPassword(options: { password: string; }) => Promise<void>
+changePasswordForgotPassword(options: { password: string; }) => Promise<{ status: string; message: string; }>
 ```
 
 | Param         | Type                               |
 | ------------- | ---------------------------------- |
 | **`options`** | <code>{ password: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ status: string; message: string; }&gt;</code>
 
 --------------------
 

@@ -46,7 +46,7 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
         JSObject result = new JSObject();
         result.put("status", "success");
         result.put("message", "Password changed successfully");
-        call.resolve();
+        call.resolve(result);
     }
 
     @Override
