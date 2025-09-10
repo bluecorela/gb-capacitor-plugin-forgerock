@@ -25,6 +25,7 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "initForgotPassword", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getQuestionForgotPassword", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "answerQuestionForgotPassword", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "changePasswordForgotPassword", returnType: CAPPluginReturnPromise),
     ]
     public var pendingNode: Node? = nil
     public var didSubmitConfirmation = false
@@ -100,5 +101,11 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         let handler = ForgotPasswordHandler(call: call, plugin: self)
         let cb = NodeForgotPasswordCallbacks(call: call, plugin: self)
         handler.answerQuestionForgotPassword(call, completion: cb.handle);
+    }
+
+    @objc func changePasswordForgotPassword(_ call: CAPPluginCall) {
+        let handler = ForgotPasswordHandler(call: call, plugin: self)
+        let cb = NodeForgotPasswordCallbacks(call: call, plugin: self)
+        handler.changePasswordForgotPassword(call, completion: cb.handle);
     }
 }

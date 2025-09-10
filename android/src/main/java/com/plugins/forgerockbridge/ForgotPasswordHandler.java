@@ -24,6 +24,8 @@ public class ForgotPasswordHandler {
 
     public static void startForgotPasswordJourney(PluginCall call, Context context, NodeListener<FRSession> listener ) {
         Log.d(TAG, "[ForgotPasswordHandler: startForgotPasswordJourney ] call method startForgotPasswordJourney");
+
+
         String journey = call.getString("journey");
         String username = call.getString("username");
 
@@ -97,7 +99,6 @@ public class ForgotPasswordHandler {
         }
 
         pending.next(context, new ForgotPasswordNodeListener(call, context, state));
-
     }
 
     public static void changePasswordForgotPassword (PluginCall call, PluginState state, Context context ) {

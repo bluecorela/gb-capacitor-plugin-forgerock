@@ -11,13 +11,14 @@ import Foundation
     init(call: CAPPluginCall, plugin: ForgerockBridgePlugin) {
         self.call = call
         self.plugin = plugin
-        self.errorMessage = ""
+        self.errorMessage = "Unknown error"
     }
 
     func handle(token: Token?, node: Node?, error: Error?) {
         print("CALL NodeForgotPasswordCallbacks handle")
         if let error = error {
-            ErrorHandler.reject(call, code: .authenticateFailed)
+            print(error)
+            ErrorHandler.reject(call, code: .unknown_error, message: "Unknown error")
             return
         }
 
@@ -25,10 +26,19 @@ import Foundation
             onCallbackReceived(node)
             return
         }
+        
+        if let token = token  {
+            onSuccess()
+            return
+        }
+        
+        ErrorHandler.reject(call, code: .unknown_error, message: "Unknown error")
+        
     }
 
     private func onCallbackReceived(_ node: Node) {
-        let activeNode = plugin.pendingNode ?? node
+        print("[NodeForgotPasswordCallback:onCallbackReceived] CALL onCallbackReceived")
+        let activeNode = node
         let username = call.getString("username")
         let answer = call.getString("answer")
 
@@ -50,9 +60,10 @@ import Foundation
         }
 
         if (hasTextOutput) {
+            print("[NodeForgotPasswordCallback:onCallbackReceived] error TextOutput")
             call.resolve([
-                "errorMessage": self.errorMessage ?? "Unknown error",
-            ])
+                "status": "error",
+                "message": self.errorMessage])
             return
         }
 
@@ -68,23 +79,35 @@ import Foundation
         }
 
         if (hasQuestion && answer == nil) {
+            print("[NodeForgotPasswordCallback:onCallbackReceived] verified username")
             plugin.pendingNode = activeNode
-            call.resolve(["status": "verified_username"])
+            call.resolve(["status": "success", "message": "verified username"])
             return
         }
     
         
         if (answer != nil) {
             plugin.pendingNode = activeNode
+            print("[NodeForgotPasswordCallback:onCallbackReceived] question success")
             call.resolve([
-                "status": "question_success"
+                "status": "success",
+                "message": "question success"
             ])
             return
         }
 
         call.resolve(["status": "Unhandled node state."])
+        return
         
     }
-
+    
+    private func onSuccess() {
+        plugin.pendingNode = nil
+        print("[NodeForgotPasswordCallback:onCallbackReceived] Password changed successfully")
+        call.resolve([
+            "status": "success",
+            "message": "Password changed successfully"
+        ])
+    }
 
 }

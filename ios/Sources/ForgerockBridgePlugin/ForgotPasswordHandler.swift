@@ -14,8 +14,8 @@ class ForgotPasswordHandler {
     }
 
     func startForgotPasswordJourney (_ call: CAPPluginCall,completion: @escaping NodeCompletion<Token> ) {
-        print("CALL startForgotPasswordJourney")
-        FRLog.setLogLevel([.network,.info ])
+        print("[ForgotPasswordHandler:startForgotPasswordJourney] CALL startForgotPasswordJourney")
+        
         guard let journey = call.getString("journey"), !journey.isEmpty else {
             ErrorHandler.reject(call, code: ErrorCode.missingJourney)
             return
@@ -30,8 +30,7 @@ class ForgotPasswordHandler {
     }
 
     func getSecurityQuestion (_ call: CAPPluginCall) {
-        print("CALL getSecurityQuestion")
-        print(self.plugin.pendingNode)
+        print("[ForgotPasswordHandler:getSecurityQuestion] CALL getSecurityQuestion")
         
         var question: String? = nil
 
@@ -85,5 +84,31 @@ class ForgotPasswordHandler {
         
         pending.next(completion: completion)
         
+    }
+
+    func changePasswordForgotPassword (_ call: CAPPluginCall,completion: @escaping NodeCompletion<Token> ) {
+
+        guard let pending = self.plugin.pendingNode else {
+            print("[changePasswordForgotPassword] NO PENDING NODE SAVE")
+            ErrorHandler.reject(call, code: .noPendingNode, message: "NO PENDING NODE SAVE")
+            return
+        }
+
+        guard let password = call.getString("password"), !password.isEmpty else {
+            print("[changePasswordForgotPassword] MISSING PARAMETER password")
+            ErrorHandler.reject(call, code: ErrorCode.missingParameter, message: "MISSING PARAMETER password")
+            return
+        }
+
+        for (_, callback) in pending.callbacks.enumerated() {
+            if let validated = callback as? ValidatedCreatePasswordCallback {
+                print("[changePasswordForgotPassword] CALLBACK ValidatedCreatePasswordCallback Detected")
+                validated.setValue(password)
+                break
+            }
+        }
+        
+        pending.next(completion: completion)
+
     }
 }
