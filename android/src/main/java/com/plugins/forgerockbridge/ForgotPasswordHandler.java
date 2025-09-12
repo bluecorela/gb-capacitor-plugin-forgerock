@@ -11,11 +11,14 @@ import org.forgerock.android.auth.FRSession;
 
 import org.forgerock.android.auth.NodeListener;
 
+import org.forgerock.android.auth.callback.ConfirmationCallback;
 import org.forgerock.android.auth.callback.PasswordCallback;
+import org.forgerock.android.auth.callback.TextOutputCallback;
 import org.forgerock.android.auth.callback.ValidatedPasswordCallback;
 import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.callback.Callback;
 
+import com.plugins.forgerockbridge.enums.ForgotPasswordEnum;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.ForgotPasswordNodeListener;
 import com.plugins.forgerockbridge.state.PluginState;
 
@@ -24,7 +27,6 @@ public class ForgotPasswordHandler {
 
     public static void startForgotPasswordJourney(PluginCall call, Context context, NodeListener<FRSession> listener ) {
         Log.d(TAG, "[ForgotPasswordHandler: startForgotPasswordJourney ] call method startForgotPasswordJourney");
-
 
         String journey = call.getString("journey");
         String username = call.getString("username");
@@ -37,7 +39,7 @@ public class ForgotPasswordHandler {
 
          if (username == null || username.trim().isEmpty()) {
             Log.e(TAG, "[ForgotPasswordHandler: startForgotPasswordJourney]: Error in get the username");
-            ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_JOURNEY);
+            ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_PARAMETER);
             return;
         }
 
@@ -90,15 +92,16 @@ public class ForgotPasswordHandler {
             return;
         }
 
-
         for (Callback cb : pending.getCallbacks()) {
             if (cb instanceof PasswordCallback) {
                 ((PasswordCallback) cb).setPassword(answer.toCharArray());
                 break;
-            } 
+            } else if (cb instanceof ConfirmationCallback) {
+                ((ConfirmationCallback) cb).setSelectedIndex(0);
+            }
         }
 
-        pending.next(context, new ForgotPasswordNodeListener(call, context, state));
+        pending.next(context, new ForgotPasswordNodeListener(call, context, state, ForgotPasswordEnum.IdPath.ANSWER_QUESTION));
     }
 
     public static void changePasswordForgotPassword (PluginCall call, PluginState state, Context context ) {
@@ -125,7 +128,7 @@ public class ForgotPasswordHandler {
             }
         }
 
-        pending.next(context, new ForgotPasswordNodeListener(call, context, state));
+        pending.next(context, new ForgotPasswordNodeListener(call, context, state, ForgotPasswordEnum.IdPath.CHANGE_PASS));
     }
 
 }

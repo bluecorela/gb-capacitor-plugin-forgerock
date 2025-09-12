@@ -6,6 +6,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.plugins.forgerockbridge.enums.ForgotPasswordEnum;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.ForgotPasswordNodeListener;
 import com.plugins.forgerockbridge.state.PluginState;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.OTPNodeListener;
@@ -72,7 +73,7 @@ public class ForgerockBridgePlugin extends Plugin {
 
     @PluginMethod
     public void initForgotPassword(PluginCall call) {
-        ForgotPasswordHandler.startForgotPasswordJourney(call, context, new ForgotPasswordNodeListener(call, context, pluginState));
+        ForgotPasswordHandler.startForgotPasswordJourney(call, context, new ForgotPasswordNodeListener(call, context, pluginState, ForgotPasswordEnum.IdPath.INIT_FORGOT_PASS));
     }
 
     @PluginMethod
