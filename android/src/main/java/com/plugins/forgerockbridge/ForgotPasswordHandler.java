@@ -6,14 +6,10 @@ import android.util.Log;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
 
-
 import org.forgerock.android.auth.FRSession;
-
 import org.forgerock.android.auth.NodeListener;
-
 import org.forgerock.android.auth.callback.ConfirmationCallback;
 import org.forgerock.android.auth.callback.PasswordCallback;
-import org.forgerock.android.auth.callback.TextOutputCallback;
 import org.forgerock.android.auth.callback.ValidatedPasswordCallback;
 import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.callback.Callback;

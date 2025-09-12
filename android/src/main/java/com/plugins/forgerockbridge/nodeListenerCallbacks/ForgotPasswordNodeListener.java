@@ -1,7 +1,5 @@
 package com.plugins.forgerockbridge.nodeListenerCallbacks;
 
-import static com.plugins.forgerockbridge.enums.ForgotPasswordEnum.IdPath.INIT_FORGOT_PASS;
-
 import android.content.Context;
 import android.util.Log;
 
@@ -9,8 +7,6 @@ import androidx.annotation.NonNull;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
-import com.nimbusds.jose.shaded.gson.Gson;
-import com.nimbusds.jose.shaded.gson.GsonBuilder;
 import com.plugins.forgerockbridge.enums.ForgotPasswordEnum;
 import com.plugins.forgerockbridge.state.PluginState;
 
@@ -48,7 +44,6 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
 
     @Override
     public void onSuccess(FRSession frSession) {
-        Log.d(TAG, "ID PATH: " + idPath);
         Log.d(TAG, "[ForgotPasswordNodeListener: onSuccess] call method onSuccess");
         pluginState.reset();
         JSObject result = new JSObject();
@@ -60,43 +55,8 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
     @Override
     public void onCallbackReceived(Node node) {
 
-        Log.d(TAG, "ID PATH: " + idPath);
-
-        try {
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            String nodeJson = gson.toJson(node);
-            Log.d(TAG, "Node completo: " + nodeJson);
-            pluginState.setPendingNode(node);
-        } catch (Exception e) {
-            Log.e(TAG, "Error serializando Node: " + e.getMessage(), e);
-        }
-
-
         try {
             Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived]: call method onCallbackReceived");
-            
-            final String username = call.getString("username", null);
-            final String answer = call.getString("answer", null);
-            
-            boolean hasName = false;
-            boolean hasTextOutput = false;
-            boolean hasQuestion = false;
-            String errorMessage = null;
-
-//            for (Callback cb : node.getCallbacks()) {
-//                if (cb instanceof TextOutputCallback) {
-//                    errorMessage = ((TextOutputCallback) cb).getMessage();
-//                    Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] errorMessage: "+ errorMessage);
-//                    pluginState.setLastErrorMessage(errorMessage);
-//                    hasTextOutput = true;
-//                } else if (cb instanceof NameCallback) {
-//                    Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] Has NameCallBack node");
-//                    hasName = true;
-//                } else if (cb instanceof PasswordCallback) {
-//                    Log.d(TAG, "[ForgotPasswordNodeListener: onCallbackReceived] Has PasswordCallback node");
-//                    hasQuestion = true;
-//                }
-//            }
 
             switch (idPath) {
                 case INIT_FORGOT_PASS:
@@ -161,8 +121,6 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
 
     private void answerQuestionHandler (PluginCall call, Node node) {
 
-        final String answer = call.getString("answer", null);
-
         String errorMessage = null;
         boolean hasTextOutput = false;
         boolean hasConfirmationCallback = false;
@@ -225,7 +183,52 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
     }
 
     private void changePassHandler (PluginCall call, Node node) {
-        
+
+        boolean hasTextOutput = false;
+        boolean hasConfirmationCallback = false;
+
+        for (Callback cb : node.getCallbacks()) {
+            if (cb instanceof TextOutputCallback) {
+                pluginState.setLastErrorMessage(((TextOutputCallback) cb).getMessage());
+                Log.d(TAG, "[ForgotPasswordNodeListener: changePassHandler] TextOutputCallback: " + pluginState.getLastErrorMessage());
+                hasTextOutput = true;
+            } else if (cb instanceof ConfirmationCallback) {
+                ((ConfirmationCallback) cb).setSelectedIndex(0);
+                hasConfirmationCallback = true;
+            }
+
+        }
+
+        if(hasTextOutput && hasConfirmationCallback) {
+
+            node.next(context, new NodeListener<FRSession>() {
+                @Override
+                public void onCallbackReceived(@NonNull Node nextNode) {
+                    Log.d(TAG, "[ForgotPasswordNodeListener: changePassHandler] onCallbackReceived: ");
+                    pluginState.setPendingNode(nextNode);
+                    JSObject out = new JSObject()
+                            .put("status", "error")
+                            .put("message", pluginState.getLastErrorMessage());
+                    call.resolve(out);
+                }
+                @Override
+                public void onSuccess(@NonNull FRSession session) {
+                    Log.d(TAG, "[ForgotPasswordNodeListener: changePassHandler] onSuccess: ");
+                    JSObject out = new JSObject()
+                    .put("status", "success")
+                    .put("message", "Password changed successfully");
+                    call.resolve(out);
+                }
+
+                @Override
+                public void onException(@NonNull Exception e) {
+                    Log.d(TAG, "[ForgotPasswordNodeListener: changePassHandler] onException: ");
+                }
+            });
+
+        }
+
+
     }
 
 }
