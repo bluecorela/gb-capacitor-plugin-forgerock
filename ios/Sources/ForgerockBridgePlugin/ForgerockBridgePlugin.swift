@@ -88,7 +88,7 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     
      @objc func initForgotPassword(_ call: CAPPluginCall) {
         let handler = ForgotPasswordHandler(call: call, plugin: self)
-        let cb = NodeForgotPasswordCallbacks(call: call, plugin: self)
+         let cb = NodeForgotPasswordCallbacks(call: call, plugin: self, idPath: ForgotPasswordIdPath.initForgotPass)
         handler.startForgotPasswordJourney(call, completion: cb.handle);
     }
 
@@ -99,13 +99,13 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func answerQuestionForgotPassword(_ call: CAPPluginCall) {
         let handler = ForgotPasswordHandler(call: call, plugin: self)
-        let cb = NodeForgotPasswordCallbacks(call: call, plugin: self)
+        let cb = NodeForgotPasswordCallbacks(call: call, plugin: self, idPath: ForgotPasswordIdPath.answerQuestion)
         handler.answerQuestionForgotPassword(call, completion: cb.handle);
     }
 
     @objc func changePasswordForgotPassword(_ call: CAPPluginCall) {
         let handler = ForgotPasswordHandler(call: call, plugin: self)
-        let cb = NodeForgotPasswordCallbacks(call: call, plugin: self)
+        let cb = NodeForgotPasswordCallbacks(call: call, plugin: self, idPath: ForgotPasswordIdPath.changePass)
         handler.changePasswordForgotPassword(call, completion: cb.handle);
     }
 }
