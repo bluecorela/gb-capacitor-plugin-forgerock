@@ -88,7 +88,7 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     
      @objc func initForgotPassword(_ call: CAPPluginCall) {
         let handler = ForgotPasswordHandler(call: call, plugin: self)
-         let cb = NodeForgotPasswordCallbacks(call: call, plugin: self, idPath: ForgotPasswordIdPath.initForgotPass)
+        let cb = NodeForgotPasswordCallbacks(call: call, plugin: self, idPath: ForgotPasswordIdPath.initForgotPass)
         handler.startForgotPasswordJourney(call, completion: cb.handle);
     }
 

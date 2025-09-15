@@ -16,6 +16,8 @@ class ForgotPasswordHandler {
     func startForgotPasswordJourney (_ call: CAPPluginCall,completion: @escaping NodeCompletion<Token> ) {
         print("[ForgotPasswordHandler:startForgotPasswordJourney] CALL startForgotPasswordJourney")
         
+        plugin.pendingNode = nil
+        
         guard let journey = call.getString("journey"), !journey.isEmpty else {
             ErrorHandler.reject(call, code: ErrorCode.missingJourney)
             return
@@ -61,7 +63,7 @@ class ForgotPasswordHandler {
         call.resolve(out)
     }
     
-    func answerQuestionForgotPassword (_ call: CAPPluginCall,completion: @escaping NodeCompletion<Token> ) {
+    func answerQuestionForgotPassword (_ call: CAPPluginCall, completion: @escaping NodeCompletion<Token> ) {
         
         guard let pending = self.plugin.pendingNode else {
             print("[answerQuestionForgotPassword] NO PENDING NODE SAVE")
@@ -79,6 +81,8 @@ class ForgotPasswordHandler {
             if let passwordCallback = callback as? PasswordCallback {
                 passwordCallback.setValue(answer)
                 break
+            } else if let confirmationCallback = callback as? ConfirmationCallback {
+                confirmationCallback.value = 0
             }
         }
         

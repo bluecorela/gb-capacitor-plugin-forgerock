@@ -30,6 +30,7 @@ import Foundation
         }
         
         if let token = token  {
+            print("PASE POR SUCCES FINAL")
             onSuccess()
             return
         }
@@ -40,6 +41,7 @@ import Foundation
     
     private func onSuccess() {
         plugin.pendingNode = nil
+        FRSession.currentSession?.logout()
         print("[NodeForgotPasswordCallback:onSuccess] Password changed successfully")
         call.resolve([
             "status": "success",
@@ -51,23 +53,7 @@ import Foundation
         print("[NodeForgotPasswordCallback:onCallbackReceived] CALL onCallbackReceived")
         
         let activeNode = node
-        //        let answer = call.getString("answer")
-        //
-        //        var hasName = false
-        //        var hasTextOutput = false
-        //        var hasQuestion = false;
-        //
-        //        for (_, callback) in node.callbacks.enumerated() {
-        //            if let name = callback as? NameCallback {
-        //                hasName = true
-        //            } else if let passwordCallback = callback as? PasswordCallback {
-        //                hasQuestion = true
-        //            } else if let textCb = callback as? TextOutputCallback {
-        //                hasTextOutput = true
-        //                self.errorMessage = textCb.message
-        //            }
-        //        }
-        print(idPath)
+        
         switch idPath {
         case .initForgotPass:
             self.initForgotPasswordHandler(activeNode)
@@ -76,50 +62,12 @@ import Foundation
             self.answerQuestionHandler(activeNode)
             return
         case .changePass:
-            print("Change password")
+            self.changePassHandler(activeNode)
             return
         }
         
         call.resolve(["status": "error", "message":"Unhandled node state"])
         return
-        
-        //        if (hasTextOutput) {
-        //            print("[NodeForgotPasswordCallback:onCallbackReceived] error TextOutput")
-        //            call.resolve([
-        //                "status": "error",
-        //                "message": self.errorMessage])
-        //            return
-        //        }
-        //
-        //        if(hasName) {
-        //            for callback in node.callbacks {
-        //                if let name = callback as? NameCallback {
-        //                    name.setValue(username)
-        //                    break
-        //                }
-        //            }
-        //            node.next(completion: self.handle)
-        //            return
-        //        }
-        //
-        //        if (hasQuestion && answer == nil) {
-        //            print("[NodeForgotPasswordCallback:onCallbackReceived] verified username")
-        //            plugin.pendingNode = activeNode
-        //            call.resolve(["status": "success", "message": "verified username"])
-        //            return
-        //        }
-        //
-        //
-        //        if (answer != nil) {
-        //            plugin.pendingNode = activeNode
-        //            print("[NodeForgotPasswordCallback:onCallbackReceived] question success")
-        //            call.resolve([
-        //                "status": "success",
-        //                "message": "question success"
-        //            ])
-        //            return
-        //        }
-        
         
     }
     
@@ -160,6 +108,7 @@ import Foundation
                 self.errorMessage = textCb.message
                 hasTextOutput = true
             } else if let confirmationCallback = callback as? ConfirmationCallback {
+                print("[NodeForgotPasswordCallback:answerQuestionHandler] confirmationCallback")
                 confirmationCallback.value = 0
                 hasConfirmationCallback = true
             }
@@ -168,25 +117,92 @@ import Foundation
         
         if(hasTextOutput && hasConfirmationCallback) {
             
-            node.next { (session: FRSession?, nextNode: Node?, error: Error?) in
-                
+            node.next { (user: FRUser?, nextNode: Node?, error: Error?) in
                 if let error = error {
-                    print("[NodeForgotPasswordCallback:answerQuestionHandler] Error al enviar credenciales")
-                    self.call.resolve([
-                        "status": "error",
-                        "message": self.errorMessage ?? error.localizedDescription
-                    ])
-                } else if let session = session {
-                    print("[NodeForgotPasswordCallback:answerQuestionHandler] Obtuvo la session)")
+                    //onException
+                    for (_, callback) in node.callbacks.enumerated() {
+                        if let textCb = callback as? TextOutputCallback {
+                            self.call.resolve([
+                                "status": "error",
+                                "message": textCb.message,
+                            ])
+                            return
+                        }
+                    }
                     
                 } else if let nextNode = nextNode {
-                    print("Respuesta con siguiente node")
-                   
+                    //onCallback
+                    self.plugin.pendingNode = nextNode
+                    self.call.resolve([
+                        "status": "error",
+                        "message": self.errorMessage,
+                    ])
+                } else if let user = user {
+                    //onSuccess
+                    self.call.resolve([
+                        "status": "success",
+                        "message": "",])
                 } else {
-                    print("[ForgeRock] Estado inesperado")
-                    
+                    self.call.resolve([
+                        "status": "error",
+                        "message": "Unhandle case answer question",])
                 }
-                
+            }
+           return
+        }
+        
+        plugin.pendingNode = node
+        call.resolve([
+            "status": "success",
+            "message": "question success"
+        ])
+        
+    }
+    
+    private func changePassHandler (_ node: Node) {
+        
+        var hasTextOutput = false;
+        var hasConfirmationCallback = false;
+        
+        for (_, callback) in node.callbacks.enumerated() {
+            if let textCb = callback as? TextOutputCallback {
+                print("[NodeForgotPasswordCallback:changePassHandler] TextOutputCallback")
+                print(self.errorMessage)
+                self.errorMessage = textCb.message
+                hasTextOutput = true
+            } else if let confirmationCallback = callback as? ConfirmationCallback {
+                print("[NodeForgotPasswordCallback:changePassHandler] confirmationCallback")
+                confirmationCallback.value = 0
+                hasConfirmationCallback = true
+            }
+            
+        }
+        
+        if(hasTextOutput && hasConfirmationCallback) {
+            
+            node.next { (user: FRUser?, nextNode: Node?, error: Error?) in
+                if let error = error {
+                    //onException
+                    self.call.resolve([
+                        "status": "error",
+                        "message": "onException changePassHandler" ])
+                } else if let nextNode = nextNode {
+                    //onCallback
+                    self.plugin.pendingNode = nextNode
+                    self.call.resolve([
+                        "status": "error",
+                        "message": self.errorMessage,
+                    ])
+                } else if let user = user {
+                    //onSuccess
+                    self.call.resolve([
+                        "status": "success",
+                        "message": "Password changed successfully"])
+                } else {
+                    self.call.resolve([
+                        "status": "error",
+                        "message": "Unhandle case changePassHandler",])
+                }
             }
             
         }

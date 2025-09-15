@@ -11,6 +11,7 @@ import com.plugins.forgerockbridge.enums.ForgotPasswordEnum;
 import com.plugins.forgerockbridge.state.PluginState;
 
 import org.forgerock.android.auth.FRSession;
+import org.forgerock.android.auth.FRUser;
 import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.NodeListener;
 import org.forgerock.android.auth.callback.Callback;
@@ -46,6 +47,11 @@ public class ForgotPasswordNodeListener implements NodeListener<FRSession> {
     public void onSuccess(FRSession frSession) {
         Log.d(TAG, "[ForgotPasswordNodeListener: onSuccess] call method onSuccess");
         pluginState.reset();
+        FRSession currentSession = FRSession.getCurrentSession();
+        if (currentSession != null) {
+            Log.d(TAG, "[ForgotPasswordNodeListener:onSuccess] FRSession.logout()");
+            currentSession.logout();
+        }
         JSObject result = new JSObject();
         result.put("status", "success");
         result.put("message", "Password changed successfully");

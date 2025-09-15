@@ -72,6 +72,7 @@ public class ForgerockBridgePlugin extends Plugin {
 
     @PluginMethod
     public void initForgotPassword(PluginCall call) {
+        pluginState.reset();
         ForgotPasswordHandler.startForgotPasswordJourney(call, context, new ForgotPasswordNodeListener(call, context, pluginState, ForgotPasswordEnum.IdPath.INIT_FORGOT_PASS));
     }
 
