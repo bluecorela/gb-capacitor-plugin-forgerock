@@ -18,14 +18,21 @@ class ForgotPasswordHandler {
         
         plugin.pendingNode = nil
         
-        guard let journey = call.getString("journey"), !journey.isEmpty else {
-            ErrorHandler.reject(call, code: ErrorCode.missingJourney)
+        guard let journey = call.getString("journey") else {
+            ErrorHandler.reject(call, code: ErrorCode.missingJourney, message: "MISSING JOURNEY")
             return
         }
 
-        guard let username = call.getString("username"), !username.isEmpty else {
-            ErrorHandler.reject(call, code: ErrorCode.missingParameter)
+        guard let username = call.getString("username") else {
+            ErrorHandler.reject(call, code: ErrorCode.missingParameter, message: "MISSING USERNAME")
             return
+        }
+        
+        
+        if let language = call.getString("language"), !language.isEmpty {
+            print("[ForgotPasswordHandler:startForgotPasswordJourney] HAS LANGUAGE")
+            let forgotPasswordInterceptor = ForgotPasswordInterceptor(languageCode: language)
+            RequestInterceptorRegistry.shared.registerInterceptors(interceptors: [forgotPasswordInterceptor])
         }
         
           FRSession.authenticate(authIndexValue: journey, completion: completion)
@@ -71,7 +78,7 @@ class ForgotPasswordHandler {
             return
         }
         
-        guard let answer = call.getString("answer"), !answer.isEmpty else {
+        guard let answer = call.getString("answer") else {
             print("[answerQuestionForgotPassword] MISSING PARAMETER answer")
             ErrorHandler.reject(call, code: ErrorCode.missingParameter, message: "MISSING PARAMETER answer")
             return
@@ -98,7 +105,7 @@ class ForgotPasswordHandler {
             return
         }
 
-        guard let password = call.getString("password"), !password.isEmpty else {
+        guard let password = call.getString("password") else {
             print("[changePasswordForgotPassword] MISSING PARAMETER password")
             ErrorHandler.reject(call, code: ErrorCode.missingParameter, message: "MISSING PARAMETER password")
             return

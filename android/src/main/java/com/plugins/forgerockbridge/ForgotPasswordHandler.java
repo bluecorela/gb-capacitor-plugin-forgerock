@@ -8,6 +8,7 @@ import com.getcapacitor.PluginCall;
 
 import org.forgerock.android.auth.FRSession;
 import org.forgerock.android.auth.NodeListener;
+import org.forgerock.android.auth.RequestInterceptorRegistry;
 import org.forgerock.android.auth.callback.ConfirmationCallback;
 import org.forgerock.android.auth.callback.PasswordCallback;
 import org.forgerock.android.auth.callback.ValidatedPasswordCallback;
@@ -15,6 +16,7 @@ import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.callback.Callback;
 
 import com.plugins.forgerockbridge.enums.ForgotPasswordEnum;
+import com.plugins.forgerockbridge.interceptor.ForgotPasswordInterceptor;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.ForgotPasswordNodeListener;
 import com.plugins.forgerockbridge.state.PluginState;
 
@@ -26,6 +28,7 @@ public class ForgotPasswordHandler {
 
         String journey = call.getString("journey");
         String username = call.getString("username");
+        String language = call.getString("language");
 
         if (journey == null || journey.trim().isEmpty()) {
             Log.e(TAG, "[ForgotPasswordHandler: startForgotPasswordJourney ]: Error in get Journey");
@@ -33,10 +36,16 @@ public class ForgotPasswordHandler {
             return;
         }
 
-         if (username == null || username.trim().isEmpty()) {
+        if (username == null || username.trim().isEmpty()) {
             Log.e(TAG, "[ForgotPasswordHandler: startForgotPasswordJourney]: Error in get the username");
             ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_PARAMETER);
             return;
+        }
+
+        if (language != null) {
+            Log.e(TAG, "[ForgotPasswordHandler: startForgotPasswordJourney]: GET LANGUAGE");
+            RequestInterceptorRegistry.getInstance()
+                .register(new ForgotPasswordInterceptor(language));
         }
 
         FRSession.authenticate(context, journey, listener);

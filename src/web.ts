@@ -64,7 +64,7 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
   }
 
   initForgotPassword(_options: {
-    journey: string; username: string;
+    journey: string; username: string; language:string
   }): Promise<{ status: string, message:string }> {
     return Promise.resolve({ status: "", message: "" });
   }
@@ -84,5 +84,7 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
   }): Promise<{ status: string, message: string }> {
     return Promise.resolve({ status: "", message: "" });
   }
+
+
   
 }
