@@ -38,6 +38,9 @@ npm run build
 * [`getQuestionForgotPassword()`](#getquestionforgotpassword)
 * [`answerQuestionForgotPassword(...)`](#answerquestionforgotpassword)
 * [`changePasswordForgotPassword(...)`](#changepasswordforgotpassword)
+* [`isValidAuthMethod(...)`](#isvalidauthmethod)
+* [`isValidAuthMethod(...)`](#isvalidauthmethod)
+* [Type Aliases](#type-aliases)
 
 </docgen-index>
 
@@ -216,15 +219,68 @@ answerQuestionForgotPassword(options: { answer: string; }) => Promise<{ status: 
 ### changePasswordForgotPassword(...)
 
 ```typescript
-changePasswordForgotPassword(options: { password: string; }) => Promise<{ status: string; message: string; }>
+changePasswordForgotPassword(options: { password?: string; }) => Promise<{ status: string; message: string; }>
 ```
 
-| Param         | Type                               |
-| ------------- | ---------------------------------- |
-| **`options`** | <code>{ password: string; }</code> |
+| Param         | Type                                |
+| ------------- | ----------------------------------- |
+| **`options`** | <code>{ password?: string; }</code> |
 
 **Returns:** <code>Promise&lt;{ status: string; message: string; }&gt;</code>
 
 --------------------
+
+
+### isValidAuthMethod(...)
+
+```typescript
+isValidAuthMethod(options: GetAuthMethodRequest) => Promise<AuthMethodResponse>
+```
+
+| Param         | Type                                                                  |
+| ------------- | --------------------------------------------------------------------- |
+| **`options`** | <code><a href="#getauthmethodrequest">GetAuthMethodRequest</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#authmethodresponse">AuthMethodResponse</a>&gt;</code>
+
+--------------------
+
+
+### isValidAuthMethod(...)
+
+```typescript
+isValidAuthMethod(options: ValidAuthMethodRequest) => Promise<AuthMethodResponse>
+```
+
+| Param         | Type                                                                      |
+| ------------- | ------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#validauthmethodrequest">ValidAuthMethodRequest</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#authmethodresponse">AuthMethodResponse</a>&gt;</code>
+
+--------------------
+
+
+### Type Aliases
+
+
+#### AuthMethodResponse
+
+<code>{ authId?: string; callbacks: PasswordCallback[]; header? : string }</code>
+
+
+#### PasswordCallback
+
+<code>{ type: "<a href="#passwordcallback">PasswordCallback</a>"; output: [{ name: "prompt"; value: string }]; input: [{ name: "IDToken1"; value: string }]; }</code>
+
+
+#### GetAuthMethodRequest
+
+<code>{ url: string; trxId: string; }</code>
+
+
+#### ValidAuthMethodRequest
+
+<code>{ url: string; trxId: string; payload: <a href="#authmethodresponse">AuthMethodResponse</a>; }</code>
 
 </docgen-api>

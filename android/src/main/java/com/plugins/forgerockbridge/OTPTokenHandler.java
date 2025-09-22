@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
 
@@ -12,6 +13,7 @@ import org.forgerock.android.auth.FRAClient;
 import org.forgerock.android.auth.FRListener;
 import org.forgerock.android.auth.FRSession;
 import org.forgerock.android.auth.FRUser;
+import org.forgerock.android.auth.Logger;
 import org.forgerock.android.auth.Mechanism;
 import org.forgerock.android.auth.NodeListener;
 import org.forgerock.android.auth.OathMechanism;
@@ -22,15 +24,35 @@ import org.json.JSONObject;
 
 import com.plugins.forgerockbridge.ErrorHandler.FRException;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
+import okhttp3.Call;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.logging.HttpLoggingInterceptor;
+
+import org.json.*;
 
 public class OTPTokenHandler {
     private static final String TAG = "ForgeRockBridge";
+    private static final MediaType MEDIA_JSON = MediaType.get("application/json; charset=utf-8");
+
+    // Cliente con logging BODY y sin seguir redirects (para ver 302 si los hay)
+    private static OkHttpClient httpClient() {
+        HttpLoggingInterceptor httpLog = new HttpLoggingInterceptor(msg -> Log.d(TAG, msg));
+        httpLog.setLevel(HttpLoggingInterceptor.Level.BODY);
+        return new OkHttpClient.Builder()
+                .addInterceptor(httpLog)
+                .followRedirects(false)
+                .build();
+    }
 
   public static void startOtpJourney(PluginCall call, Context context, NodeListener<FRSession> listener ) {
         String journey = call.getString("journey");
@@ -40,8 +62,9 @@ public class OTPTokenHandler {
           ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_JOURNEY);
             return;
         }
-        Log.d(TAG, "[OTPTokenHandler]: Esin");
-        FRSession.authenticate(context, journey, listener);
+      Log.d(TAG, "[OTPTokenHandler]: PASO AQUI "+journey);
+
+      FRSession.authenticate(context, journey, listener);
 
     }
 
@@ -114,6 +137,112 @@ public class OTPTokenHandler {
         }
     }
 
+    public static void isValidAuthMethod(PluginCall call) {
+
+        String baseUrl = call.getString("url");
+        String trxId   = "64ccfa77-3379-4888-bb6c-2b226d1f6124";
+        JSObject payloadObj = call.getObject("payload");
+        String payload = "{}";
+        if (payloadObj != null) {
+            payload = payloadObj.toString();
+            Log.d(TAG, "PAYLOAD: " + payload);
+        }
+
+        String adviceXml = "<Advices><AttributeValuePair><Attribute name='TransactionConditionAdvice'/>"
+                + "<Value>" + trxId + "</Value></AttributeValuePair></Advices>";
+        String qs = "authIndexType=composite_advice&authIndexValue="
+                + URLEncoder.encode(adviceXml, StandardCharsets.UTF_8);
+
+        String url = baseUrl + (baseUrl.contains("?") ? "&" : "?") + qs;
+
+        Log.d(TAG, "REQUEST URL: " + url);
+        executeHttpQuery(url, payload, call);
+    }
+
+    private static void executeHttpQuery(String url, String payload, PluginCall call) {
+        String sessionToken = FRSession.getCurrentSession().getSessionToken().getValue();
+        String cookie = "iPlanetDirectoryPro=" + sessionToken;
+        RequestBody body = RequestBody.create(payload, MEDIA_JSON);
+
+        Request req = new Request.Builder()
+                .url(url)
+                .post(body)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Accept", "application/json")
+                .addHeader("Accept-API-Version", "protocol=1.0,resource=2.0")
+                .addHeader("Cookie", cookie)
+                .build();
+        Log.d(TAG, "LOG "+ payload);
+
+        handleHttpRequest(req, call);
+    }
+
+    private static void handleHttpRequest( Request req, PluginCall call){
+        OkHttpClient client = httpClient();
+        new Thread(() -> {
+            try (Response resp = client.newCall(req).execute()) {
+                String text = resp.body() != null ? resp.body().string() : "";
+
+                if (text.trim().isEmpty()) {
+                    Log.e(TAG, "Without JSON");
+                    return;
+                }
+                AuthMethodResponse(call, text);
+
+            } catch (Exception e) {
+                Log.e(TAG, "[OTPTokenHandler]: handleHttpRequest exception: " + e.getMessage(), e);
+                ErrorHandler.reject(call, ErrorHandler.ErrorCode.HTTP_REQUEST_ERROR);
+            }
+        }).start();
+
+    }
+
+    private static void AuthMethodResponse(PluginCall call, String text) throws JSONException {
+        JSONObject json = new JSONObject(text);
+        Log.d(TAG, "json: " + text);
+        String successResponse = json.optString("tokenId", null);
+        String errorResponse = json.optString("code", null);
+        Log.d(TAG, "SUCCESS: " + successResponse);
+
+        if(successResponse != null || errorResponse != null){
+            Log.d(TAG, "ENTRO AQUI: ");
+            String status = successResponse != null ? "success": "failed";
+            JSObject buildSuccessCallback =  buildSuccessErrorCallback(status);
+            Log.d(TAG, "buildSuccessCallback r: " + buildSuccessCallback);
+            call.resolve(buildSuccessCallback);
+           
+        }else{
+            Log.d(TAG, "ENTRO ACA: ");
+            Log.d(TAG, "JSON OK: " + json);
+            call.resolve(JSObject.fromJSONObject(json));
+        }
+
+    }
+
+    private static JSObject buildSuccessErrorCallback(String status) {
+        try {
+
+            JSObject outMessage = new JSObject()
+                    .put("name", "status")
+                    .put("value", status);
+
+            JSArray output = (JSArray) new JSArray().put(outMessage);
+
+            JSObject successCallback = new JSObject()
+                    .put("type", "SuccessCallback")
+                    .put("output", output);
+
+            // payload = { callbacks: [ callback ] }  // ajústalo si necesitas authId/header
+            JSArray callbacks = (JSArray) new JSArray().put(successCallback);
+
+            return new JSObject()
+                    .put("callbacks", callbacks);
+        } catch (Exception e) {
+            Log.e(TAG, "SUCCESS ERROR "+e);
+          throw new RuntimeException("Error building TextOutputCallback", e);
+        }
+      }
+
   private static JSObject validateExistMechanism(Context context) throws FRException {
       try{
         FRAClient fraClient = initClient(context);
@@ -183,7 +312,7 @@ public class OTPTokenHandler {
     private static void checkServerAndDeviceOtpState(PluginCall call, Context context, String uuid){
         String sessionToken = FRSession.getCurrentSession().getSessionToken().getValue();
         String cookie = "iPlanetDirectoryPro=" + sessionToken;
-
+        Log.d(TAG, "sessionToken"+sessionToken);
         String base_url = call.getString("url");
 
         if (base_url == null) {

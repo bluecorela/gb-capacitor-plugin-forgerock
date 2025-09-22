@@ -22,8 +22,8 @@ class OTPTokenHandler {
         
           FRSession.authenticate(authIndexValue: journey, completion: completion)
     }
-    
 
+    
     func validateExistenceOTP(call: CAPPluginCall) {
         guard let user = FRUser.currentUser else {
             ErrorHandler.reject(call, code: ErrorCode.gettingUserInfo)
@@ -53,6 +53,100 @@ class OTPTokenHandler {
             }
         }
     }
+    
+    func isValidAuthMethod(call: CAPPluginCall){
+        guard let baseUrl = call.getString("url"), !baseUrl.isEmpty else {
+            call.reject("Missing 'url'")
+            return
+        }
+        let trxId = "772f0778-a5ac-4815-974e-5f85c7044f52"
+
+    
+        var payloadJson = "{}"
+        if let payloadObj = call.getObject("payload") {
+            if let data = try? JSONSerialization.data(withJSONObject: payloadObj, options: []),
+                let jsonStr = String(data: data, encoding: .utf8) {
+                payloadJson = jsonStr
+            }
+
+        } else if let payloadStr = call.getString("payload") {
+            payloadJson = payloadStr
+        }
+
+        let adviceXml =
+        "<Advices><AttributeValuePair><Attribute name='TransactionConditionAdvice'/>" +
+        "<Value>\(trxId)</Value></AttributeValuePair></Advices>"
+
+        guard let adviceEncoded = adviceXml.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+        call.reject("Failed to encode advice XML")
+        return
+        }
+
+        let qs = "authIndexType=composite_advice&authIndexValue=\(adviceEncoded)"
+
+        let separator = baseUrl.contains("?") ? "&" : "?"
+        let finalUrl = baseUrl + separator + qs
+
+        print("REQUEST URL: \(finalUrl)")
+        print("PAYLOAD: \(payloadJson)")
+
+        self.executeHttpQuery(urlString: finalUrl, payload: payloadJson, call: call);
+    }
+
+
+    func executeHttpQuery(urlString: String, payload: String, call: CAPPluginCall){
+        //let sessionToken = FRSession.currentSession?.sessionToken?.value
+        let sessionToken = "_BcqNngvGX_oluVpoX8Y_5vVTGA.*AAJTSQACMDEAAlNLABxVeDhsMytzRzcrU2dVWDhXYXhUTHFLejNad2s9AAR0eXBlAANDVFMAAlMxAAA.*"
+        let cookie = "iPlanetDirectoryPro=\(sessionToken ?? "")"
+         
+        guard let url = URL(string: urlString) else {
+                ErrorHandler.reject(call, code: .httpRequestError)
+                return
+       }
+        
+        var req = URLRequest(url: url)
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.setValue("application/json", forHTTPHeaderField: "Accept")
+            req.setValue("protocol=1.0,resource=2.0", forHTTPHeaderField: "Accept-API-Version")
+            req.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+            req.setValue(cookie, forHTTPHeaderField: "Cookie")
+
+           print("REQUEST: \(req)")
+        
+        URLSession.shared.dataTask(with: req) { data, response, error in
+            print("DATA: \(String(describing: data))")
+            print("RESPONSE2: \(String(describing: response))")
+            print("ERROR: \(String(describing: error))")
+            
+            if let error = error {
+                print("[OTPTokenHandler] network error: \(error)")
+                ErrorHandler.reject(call, code: .httpRequestError)
+                return
+            }
+        
+            guard let http = response as? HTTPURLResponse else {
+                ErrorHandler.reject(call, code: .httpRequestError)
+                return
+            }
+        
+            guard (200...299).contains(http.statusCode) else {
+                print("HTTP error: \(http.statusCode) - \(HTTPURLResponse.localizedString(forStatusCode: http.statusCode))")
+                ErrorHandler.reject(call, code: .httpRequestError)
+                return
+            }
+
+            guard let data = data else {
+                print("Without data (data == nil)")
+                ErrorHandler.reject(call, code: .httpRequestError)
+                return
+            }
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("[Raw JSON Response]: \(jsonString)")
+            }
+        }.resume()
+   }
+
     
     func checkServerAndDeviceOtpState(call: CAPPluginCall, uuid: String){
         
@@ -221,6 +315,7 @@ class OTPTokenHandler {
         return Int(until - now)
     }
 
+  
 }
 
 

@@ -1,6 +1,6 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { ForgerockBridgePlugin } from './definitions';
+import type { AuthMethodResponse, ForgerockBridgePlugin, GetAuthMethodRequest, ValidAuthMethodRequest } from './definitions';
 
 
 export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlugin {
@@ -84,5 +84,31 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
   }): Promise<{ status: string, message: string }> {
     return Promise.resolve({ status: "", message: "" });
   }
-  
+
+  async isValidAuthMethod(options: GetAuthMethodRequest): Promise<AuthMethodResponse>;
+  async isValidAuthMethod(options: ValidAuthMethodRequest): Promise<AuthMethodResponse>;
+  async isValidAuthMethod(
+    options: GetAuthMethodRequest | ValidAuthMethodRequest
+  ): Promise<AuthMethodResponse > {
+    try {
+      const res = await fetch(options.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Trx-Id': options.trxId,
+        },
+        body: 'payload' in options ? JSON.stringify(options.payload) : undefined,
+      });
+
+      if (!res.ok) {
+   
+        return Promise.resolve({callbacks: []});
+      }
+
+      const data = await res.json();
+      return data;
+    } catch (err: any) {
+      return Promise.resolve({callbacks: []});
+    }
+  }
 }

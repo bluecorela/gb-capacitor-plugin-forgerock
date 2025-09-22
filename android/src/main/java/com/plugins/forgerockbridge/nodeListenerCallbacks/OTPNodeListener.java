@@ -37,25 +37,36 @@ public class OTPNodeListener implements NodeListener<FRSession> {
     }
     @Override
     public void onException(@NonNull Exception e) {
-      Log.d(TAG, "[OTPDeleteNodeListener]: public void onException(Exception e)" + e);
+      Log.e(TAG, "[OTPDeleteNodeListener]: public void onException(Exception e)" + e);
       pluginState.reset();
       ErrorHandler.reject(call, ErrorHandler.ErrorCode.AUTHENTICATE_FAILED);
     }
 
     @Override
     public void onSuccess(FRSession frSession) {
+        Log.d(TAG, "[onSuccess]");
+
         pluginState.reset();
-        call.resolve();
+
+        JSObject result = new JSObject();
+        result.put("status", "success");
+        result.put("message", "Proceso finalizado. Si deseas otro OTP, inicia de nuevo el árbol.");
+
+        call.resolve(result);
+
     }
 
     @Override
     public void onCallbackReceived(Node node) {
+
         try {
+            Log.d(TAG, "onCallbackReceived");
             String uri = null;
             boolean hasTextOutput = false;
             boolean hasHiddenValue = false;
-
+            node.getHeader();
              for (Callback cb : node.getCallbacks()) {
+             
                 if (cb instanceof HiddenValueCallback) {
                     hasHiddenValue = true;
                     uri = ((HiddenValueCallback) cb).getValue();
@@ -70,16 +81,20 @@ public class OTPNodeListener implements NodeListener<FRSession> {
             }
 
            if(hasHiddenValue){
+               Log.d(TAG, "ENTRO AL HIDDEN");
                registerMechanism(uri, node);
            }else if (hasTextOutput) {
+               Log.e(TAG, "hasTextOutput");
              ErrorHandler.reject(call, ErrorHandler.ErrorCode.CALLBACK_FAILED);
              pluginState.reset();
            }
-
+            node.next(context, OTPNodeListener.this);
         } catch (Exception e) {
+            Log.e(TAG, "Exception CALLBACK_FAILED"+e);
           ErrorHandler.reject(call, ErrorHandler.ErrorCode.CALLBACK_FAILED);
           pluginState.reset();
         }
+
     }
 
     private void registerMechanism(String uri, Node node) throws AuthenticatorException {
@@ -91,22 +106,24 @@ public class OTPNodeListener implements NodeListener<FRSession> {
         fraClient.createMechanismFromUri(uri, new FRAListener<Mechanism>() {
             @Override
             public void onSuccess(Mechanism mechanism) {
+                Log.d(TAG, "VINO AL ON SUCCES");
 
                     // Next to finish process register in FR
-                    node.next(context, null);
-
-                    JSObject result = new JSObject();
-                    result.put("status", "success");
-                    result.put("message", "OTP registrado correctamente");
-
-                    Log.d(TAG, "status"+result);
-                    call.resolve(result);
-                    pluginState.reset();
+//                    node.next(context, null);
+                    node.next(context, OTPNodeListener.this);
+//                    JSObject result = new JSObject();
+//                    result.put("status", "success");
+//                    result.put("message", "OTP registrado correctamente");
+//
+//                    Log.d(TAG, " [status] "+result);
+//                    call.resolve(result);
+//                    pluginState.reset();
 
             }
 
             @Override
             public void onException(Exception e) {
+              Log.e(TAG, "[ALGO PASO] "+e);
               ErrorHandler.reject(call, ErrorHandler.ErrorCode.REGISTER_OTP_FAILED);
               pluginState.reset();
             }

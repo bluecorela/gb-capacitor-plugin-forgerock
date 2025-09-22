@@ -99,4 +99,9 @@ public class ForgerockBridgePlugin extends Plugin {
         );
     }
 
+    @PluginMethod
+    public void isValidAuthMethod(PluginCall call) {
+        OTPTokenHandler.isValidAuthMethod(call);
+    }
+
 }
