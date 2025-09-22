@@ -178,12 +178,12 @@ generateOTP() => Promise<{ otp: string; }>
 ### initForgotPassword(...)
 
 ```typescript
-initForgotPassword(options: { journey: string; username?: string; }) => Promise<{ status: string; message: string; }>
+initForgotPassword(options: { journey: string; username: string; language: string; }) => Promise<{ status: string; message: string; }>
 ```
 
-| Param         | Type                                                 |
-| ------------- | ---------------------------------------------------- |
-| **`options`** | <code>{ journey: string; username?: string; }</code> |
+| Param         | Type                                                                  |
+| ------------- | --------------------------------------------------------------------- |
+| **`options`** | <code>{ journey: string; username: string; language: string; }</code> |
 
 **Returns:** <code>Promise&lt;{ status: string; message: string; }&gt;</code>
 
