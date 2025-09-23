@@ -107,18 +107,7 @@ public class OTPNodeListener implements NodeListener<FRSession> {
             @Override
             public void onSuccess(Mechanism mechanism) {
                 Log.d(TAG, "VINO AL ON SUCCES");
-
-                    // Next to finish process register in FR
-//                    node.next(context, null);
                     node.next(context, OTPNodeListener.this);
-//                    JSObject result = new JSObject();
-//                    result.put("status", "success");
-//                    result.put("message", "OTP registrado correctamente");
-//
-//                    Log.d(TAG, " [status] "+result);
-//                    call.resolve(result);
-//                    pluginState.reset();
-
             }
 
             @Override

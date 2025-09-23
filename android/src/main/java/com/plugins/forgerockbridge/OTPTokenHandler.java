@@ -145,7 +145,7 @@ public class OTPTokenHandler {
 
         if (payloadObj != null) {
             payload = payloadObj.toString();
-            Log.d(TAG, "PAYLOAD: " + payload);
+            Log.d(TAG, "Data payload: " + payload);
         }
 
         String adviceXml = "<Advices><AttributeValuePair><Attribute name='TransactionConditionAdvice'/>"
@@ -181,7 +181,7 @@ public class OTPTokenHandler {
             try (Response resp = client.newCall(req).execute()) {
 
                 String text = resp.body() != null ? resp.body().string() : "";
-                Log.d(TAG, "RESPONSE"+ text);
+                Log.d(TAG, "Response API: "+ text);
                 if (text.trim().isEmpty()) {
                     Log.e(TAG, "Without JSON");
                     return;
@@ -204,15 +204,14 @@ public class OTPTokenHandler {
   
 
         if(successResponse != null || errorResponse != null){
-            Log.d(TAG, "ENTRO AQUI: ");
+          
             String status = successResponse != null ? "success": "failed";
             JSObject buildSuccessCallback =  buildSuccessErrorCallback(status);
-            Log.d(TAG, "buildSuccessCallback r: " + buildSuccessCallback);
+            Log.d(TAG, "Data send to front: " + buildSuccessCallback);
             call.resolve(buildSuccessCallback);
            
         }else{
-            Log.d(TAG, "ENTRO ACA: ");
-            Log.d(TAG, "JSON OK: " + json);
+            Log.d(TAG, "Json sent to front: " + json);
             call.resolve(JSObject.fromJSONObject(json));
         }
 
