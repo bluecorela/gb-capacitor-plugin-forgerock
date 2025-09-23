@@ -4,6 +4,7 @@ import android.util.Log;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
 import org.forgerock.android.auth.FRListener;
+import org.forgerock.android.auth.FRSession;
 import org.forgerock.android.auth.FRUser;
 import org.forgerock.android.auth.UserInfo;
 import org.json.JSONObject;
@@ -63,5 +64,15 @@ private static final String TAG = "ForgeRockBridge ";
         } catch (Exception e) {
             call.reject("Error closing the session: " + e.getMessage());
         }
+    }
+
+    public static void getCurrentSession(PluginCall call){
+        String sessionToken =  FRSession.getCurrentSession().getSessionToken().getValue();
+        
+        JSObject result = new JSObject();
+
+        result.put("currentSession", sessionToken);
+        Log.d(TAG, sessionToken);
+        call.resolve(result);
     }
 }
