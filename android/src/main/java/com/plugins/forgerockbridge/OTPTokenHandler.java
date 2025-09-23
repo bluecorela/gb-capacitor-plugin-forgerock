@@ -61,7 +61,7 @@ public class OTPTokenHandler {
           ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_JOURNEY);
             return;
         }
-      Log.d(TAG, "[OTPTokenHandler]: PASO AQUI "+journey);
+      Log.d(TAG, "[OTPTokenHandler]: Journey "+journey);
 
       FRSession.authenticate(context, journey, listener);
 
@@ -145,7 +145,7 @@ public class OTPTokenHandler {
 
         if (payloadObj != null) {
             payload = payloadObj.toString();
-            Log.d(TAG, "Data payload: " + payload);
+            Log.d(TAG, "[OTPTokenHandler]: Data payload: " + payload);
         }
 
         String adviceXml = "<Advices><AttributeValuePair><Attribute name='TransactionConditionAdvice'/>"
@@ -181,9 +181,9 @@ public class OTPTokenHandler {
             try (Response resp = client.newCall(req).execute()) {
 
                 String text = resp.body() != null ? resp.body().string() : "";
-                Log.d(TAG, "Response API: "+ text);
+                Log.d(TAG, "[OTPTokenHandler]: Response API: "+ text);
                 if (text.trim().isEmpty()) {
-                    Log.e(TAG, "Without JSON");
+                    Log.e(TAG, "[OTPTokenHandler]: Without JSON");
                     return;
                 }
                 AuthMethodResponse(call, text);
@@ -207,11 +207,11 @@ public class OTPTokenHandler {
           
             String status = successResponse != null ? "success": "failed";
             JSObject buildSuccessCallback =  buildSuccessErrorCallback(status);
-            Log.d(TAG, "Data send to front: " + buildSuccessCallback);
+            Log.d(TAG, "[OTPTokenHandler]: Data send to front: " + buildSuccessCallback);
             call.resolve(buildSuccessCallback);
            
         }else{
-            Log.d(TAG, "Json sent to front: " + json);
+            Log.d(TAG, "[OTPTokenHandler]: Json sent to front: " + json);
             call.resolve(JSObject.fromJSONObject(json));
         }
 
@@ -235,7 +235,7 @@ public class OTPTokenHandler {
             return new JSObject()
                     .put("callbacks", callbacks);
         } catch (Exception e) {
-            Log.e(TAG, "SUCCESS ERROR "+e);
+            Log.e(TAG, "[OTPTokenHandler]:SUCCESS ERROR "+e);
           throw new RuntimeException("Error building TextOutputCallback", e);
         }
       }
@@ -273,7 +273,7 @@ public class OTPTokenHandler {
 
           return result;
       } catch (Exception e) {
-          Log.e(TAG, "error "+e);
+          Log.e(TAG, "[OTPTokenHandler]: error "+e);
           throw new FRException(ErrorHandler.ErrorCode.NO_ACCOUNTS_REGISTERED);
       }
     }
@@ -309,7 +309,6 @@ public class OTPTokenHandler {
     private static void checkServerAndDeviceOtpState(PluginCall call, Context context, String uuid){
         String sessionToken = FRSession.getCurrentSession().getSessionToken().getValue();
         String cookie = "iPlanetDirectoryPro=" + sessionToken;
-        Log.d(TAG, "sessionToken"+sessionToken);
         String base_url = call.getString("url");
 
         if (base_url == null) {
@@ -373,7 +372,7 @@ public class OTPTokenHandler {
 
         result.put("hasServerToken", hasServerToken);
         result.put("hasDeviceToken", hasDeviceToken);
-        Log.d(TAG, "result: " + result);
+        Log.d(TAG, "[OTPTokenHandler]: result: " + result);
         call.resolve(result);
     }
 
