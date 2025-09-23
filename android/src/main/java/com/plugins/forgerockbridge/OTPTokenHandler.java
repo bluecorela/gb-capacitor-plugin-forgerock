@@ -143,9 +143,6 @@ public class OTPTokenHandler {
         JSObject payloadObj = call.getObject("payload");
         String payload = "{}";
 
-        Log.d(TAG, "TRXID: " + trxId);
-
-
         if (payloadObj != null) {
             payload = payloadObj.toString();
             Log.d(TAG, "PAYLOAD: " + payload);
@@ -158,7 +155,6 @@ public class OTPTokenHandler {
 
         String url = baseUrl + (baseUrl.contains("?") ? "&" : "?") + qs;
 
-        Log.d(TAG, "REQUEST URL: " + url);
         executeHttpQuery(url, payload, call);
     }
 
@@ -175,7 +171,6 @@ public class OTPTokenHandler {
                 .addHeader("Accept-API-Version", "protocol=1.0,resource=2.0")
                 .addHeader("Cookie", cookie)
                 .build();
-        Log.d(TAG, "LOG "+ payload);
 
         handleHttpRequest(req, call);
     }
@@ -191,7 +186,6 @@ public class OTPTokenHandler {
                     Log.e(TAG, "Without JSON");
                     return;
                 }
-                Log.e(TAG, "[TEXT]"+text);
                 AuthMethodResponse(call, text);
 
             } catch (Exception e) {
@@ -204,10 +198,10 @@ public class OTPTokenHandler {
 
     private static void AuthMethodResponse(PluginCall call, String text) throws JSONException {
         JSONObject json = new JSONObject(text);
-        Log.d(TAG, "json: " + text);
+
         String successResponse = json.optString("tokenId", null);
         String errorResponse = json.optString("code", null);
-        Log.d(TAG, "SUCCESS: " + successResponse);
+  
 
         if(successResponse != null || errorResponse != null){
             Log.d(TAG, "ENTRO AQUI: ");
@@ -237,7 +231,6 @@ public class OTPTokenHandler {
                     .put("type", "SuccessCallback")
                     .put("output", output);
 
-            // payload = { callbacks: [ callback ] }  // ajústalo si necesitas authId/header
             JSArray callbacks = (JSArray) new JSArray().put(successCallback);
 
             return new JSObject()
