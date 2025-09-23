@@ -85,6 +85,12 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
     return Promise.resolve({ status: "", message: "" });
   }
 
+
+  getCurrentSession():Promise<{ currentSesion: string}> {
+    return Promise.resolve({ currentSesion: "true" });
+  }
+
+
   async isValidAuthMethod(options: GetAuthMethodRequest): Promise<AuthMethodResponse>;
   async isValidAuthMethod(options: ValidAuthMethodRequest): Promise<AuthMethodResponse>;
   async isValidAuthMethod(

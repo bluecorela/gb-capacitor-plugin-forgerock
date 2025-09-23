@@ -65,6 +65,7 @@ export interface ForgerockBridgePlugin {
   getQuestionForgotPassword(): Promise<{question: string}>;
   answerQuestionForgotPassword(options: {answer: string}) : Promise<{ status: string, message: string }>;
   changePasswordForgotPassword(options: {password?: string}) : Promise<{ status: string, message: string }>;
+  getCurrentSession() : Promise<{ currentSesion: string}>;
 
 
   isValidAuthMethod(options: GetAuthMethodRequest): Promise<AuthMethodResponse>;

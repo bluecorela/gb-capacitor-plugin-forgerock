@@ -38,6 +38,7 @@ npm run build
 * [`getQuestionForgotPassword()`](#getquestionforgotpassword)
 * [`answerQuestionForgotPassword(...)`](#answerquestionforgotpassword)
 * [`changePasswordForgotPassword(...)`](#changepasswordforgotpassword)
+* [`getCurrentSession()`](#getcurrentsession)
 * [`isValidAuthMethod(...)`](#isvalidauthmethod)
 * [`isValidAuthMethod(...)`](#isvalidauthmethod)
 * [Type Aliases](#type-aliases)
@@ -227,6 +228,17 @@ changePasswordForgotPassword(options: { password?: string; }) => Promise<{ statu
 | **`options`** | <code>{ password?: string; }</code> |
 
 **Returns:** <code>Promise&lt;{ status: string; message: string; }&gt;</code>
+
+--------------------
+
+
+### getCurrentSession()
+
+```typescript
+getCurrentSession() => Promise<{ currentSesion: string; }>
+```
+
+**Returns:** <code>Promise&lt;{ currentSesion: string; }&gt;</code>
 
 --------------------
 

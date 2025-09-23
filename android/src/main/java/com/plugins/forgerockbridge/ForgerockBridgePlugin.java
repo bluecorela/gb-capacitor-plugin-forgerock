@@ -2,6 +2,8 @@ package com.plugins.forgerockbridge;
 
 import android.content.Context;
 
+import org.w3c.dom.UserDataHandler;
+
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -103,5 +105,12 @@ public class ForgerockBridgePlugin extends Plugin {
     public void isValidAuthMethod(PluginCall call) {
         OTPTokenHandler.isValidAuthMethod(call);
     }
+
+    @PluginMethod
+    public void getCurrentSession(PluginCall call) {
+        UserHandler.getCurrentSession(call);
+    }
+
+    
 
 }

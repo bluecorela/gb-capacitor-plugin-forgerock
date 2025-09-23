@@ -44,7 +44,6 @@ public class OTPTokenHandler {
     private static final String TAG = "ForgeRockBridge";
     private static final MediaType MEDIA_JSON = MediaType.get("application/json; charset=utf-8");
 
-    // Cliente con logging BODY y sin seguir redirects (para ver 302 si los hay)
     private static OkHttpClient httpClient() {
         HttpLoggingInterceptor httpLog = new HttpLoggingInterceptor(msg -> Log.d(TAG, msg));
         httpLog.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -140,9 +139,13 @@ public class OTPTokenHandler {
     public static void isValidAuthMethod(PluginCall call) {
 
         String baseUrl = call.getString("url");
-        String trxId   = "64ccfa77-3379-4888-bb6c-2b226d1f6124";
+        String trxId   = call.getString("trxId");
         JSObject payloadObj = call.getObject("payload");
         String payload = "{}";
+
+        Log.d(TAG, "TRXID: " + trxId);
+
+
         if (payloadObj != null) {
             payload = payloadObj.toString();
             Log.d(TAG, "PAYLOAD: " + payload);
@@ -181,12 +184,14 @@ public class OTPTokenHandler {
         OkHttpClient client = httpClient();
         new Thread(() -> {
             try (Response resp = client.newCall(req).execute()) {
-                String text = resp.body() != null ? resp.body().string() : "";
 
+                String text = resp.body() != null ? resp.body().string() : "";
+                Log.d(TAG, "RESPONSE"+ text);
                 if (text.trim().isEmpty()) {
                     Log.e(TAG, "Without JSON");
                     return;
                 }
+                Log.e(TAG, "[TEXT]"+text);
                 AuthMethodResponse(call, text);
 
             } catch (Exception e) {
