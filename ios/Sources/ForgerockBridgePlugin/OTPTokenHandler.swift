@@ -54,70 +54,77 @@ class OTPTokenHandler {
         }
     }
     
-    func isValidAuthMethod(call: CAPPluginCall){
-        guard let baseUrl = call.getString("url"), !baseUrl.isEmpty else {
-            call.reject("Missing 'url'")
-            return
-        }
-        let trxId = "772f0778-a5ac-4815-974e-5f85c7044f52"
-
-    
-        var payloadJson = "{}"
-        if let payloadObj = call.getObject("payload") {
-            if let data = try? JSONSerialization.data(withJSONObject: payloadObj, options: []),
-                let jsonStr = String(data: data, encoding: .utf8) {
-                payloadJson = jsonStr
-            }
-
-        } else if let payloadStr = call.getString("payload") {
-            payloadJson = payloadStr
-        }
-
-        let adviceXml =
-        "<Advices><AttributeValuePair><Attribute name='TransactionConditionAdvice'/>" +
-        "<Value>\(trxId)</Value></AttributeValuePair></Advices>"
-
-        guard let adviceEncoded = adviceXml.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-        call.reject("Failed to encode advice XML")
+    func isValidAuthMethod(call: CAPPluginCall) {
+      guard let baseUrl = call.getString("url"), !baseUrl.isEmpty else {
+        call.reject("Missing 'url'")
         return
-        }
+      }
+    
+     let trxId = call.getString("trxId") ?? ""
 
-        let qs = "authIndexType=composite_advice&authIndexValue=\(adviceEncoded)"
+      var payloadJson = "{}"
+      if let payloadObj = call.getObject("payload"),
+         let data = try? JSONSerialization.data(withJSONObject: payloadObj, options: []),
+         let jsonStr = String(data: data, encoding: .utf8) {
+        payloadJson = jsonStr
+      }
 
-        let separator = baseUrl.contains("?") ? "&" : "?"
-        let finalUrl = baseUrl + separator + qs
+      let adviceXml = "<Advices><AttributeValuePair><Attribute name='TransactionConditionAdvice'/><Value>\(trxId)</Value></AttributeValuePair></Advices>"
 
-        print("REQUEST URL: \(finalUrl)")
-        print("PAYLOAD: \(payloadJson)")
+      guard var comps = URLComponents(string: baseUrl) else {
+        call.reject("Invalid 'url'")
+        return
+      }
 
-        self.executeHttpQuery(urlString: finalUrl, payload: payloadJson, call: call);
+      var items = comps.queryItems ?? []
+      items.append(URLQueryItem(name: "authIndexType", value: "composite_advice"))
+      items.append(URLQueryItem(name: "authIndexValue", value: adviceXml))
+      comps.queryItems = items
+
+      guard let finalUrl = comps.url?.absoluteString else {
+        call.reject("Failed to build URL")
+        return
+      }
+
+      executeHttpQuery(urlString: finalUrl, payload: payloadJson, call: call)
     }
 
 
     func executeHttpQuery(urlString: String, payload: String, call: CAPPluginCall){
-        //let sessionToken = FRSession.currentSession?.sessionToken?.value
-        let sessionToken = "_BcqNngvGX_oluVpoX8Y_5vVTGA.*AAJTSQACMDEAAlNLABxVeDhsMytzRzcrU2dVWDhXYXhUTHFLejNad2s9AAR0eXBlAANDVFMAAlMxAAA.*"
+        let sessionToken = FRSession.currentSession?.sessionToken?.value
         let cookie = "iPlanetDirectoryPro=\(sessionToken ?? "")"
          
         guard let url = URL(string: urlString) else {
-                ErrorHandler.reject(call, code: .httpRequestError)
-                return
+            ErrorHandler.reject(call, code: .httpRequestError)
+            return
        }
         
+        print("PAYLOAD executeHttpQuery: \(payload)")
         var req = URLRequest(url: url)
+        if let bodyData = payload.data(using: .utf8) {
+            req.httpBody = bodyData
+        }
             req.httpMethod = "POST"
-            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
             req.setValue("application/json", forHTTPHeaderField: "Accept")
             req.setValue("protocol=1.0,resource=2.0", forHTTPHeaderField: "Accept-API-Version")
             req.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
             req.setValue(cookie, forHTTPHeaderField: "Cookie")
+            
 
            print("REQUEST: \(req)")
         
-        URLSession.shared.dataTask(with: req) { data, response, error in
+        
+        self.handleHttpRequest(call: call, request: req)
+   }
+    
+    func handleHttpRequest(call: CAPPluginCall, request: URLRequest) {
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
             print("DATA: \(String(describing: data))")
             print("RESPONSE2: \(String(describing: response))")
             print("ERROR: \(String(describing: error))")
+            
             
             if let error = error {
                 print("[OTPTokenHandler] network error: \(error)")
@@ -126,6 +133,7 @@ class OTPTokenHandler {
             }
         
             guard let http = response as? HTTPURLResponse else {
+                print("ERROR RESPONSE")
                 ErrorHandler.reject(call, code: .httpRequestError)
                 return
             }
@@ -135,18 +143,61 @@ class OTPTokenHandler {
                 ErrorHandler.reject(call, code: .httpRequestError)
                 return
             }
-
-            guard let data = data else {
-                print("Without data (data == nil)")
-                ErrorHandler.reject(call, code: .httpRequestError)
+            
+            if let data = data {
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("[Raw JSON Response]: \(jsonString)")
+                }
+                self.AuthMethodResponse(call: call, data)
+            }
+    
+        }.resume()
+        
+    }
+    
+    func AuthMethodResponse (call: CAPPluginCall, _ data: Data) {
+        if let jsonObject = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any] {
+            
+            let successResponse = jsonObject["tokenId"] as? String ?? nil
+            let errorResponse = jsonObject["code"] as? String ?? nil
+            
+            if(successResponse != nil || errorResponse != nil){
+                
+                let status = (successResponse != nil) ? "success" : "failed"
+                print("[OTPTokenHandler]: Data send to front: ")
+                print(jsonObject)
+                self.buildSuccessErrorCallback(call: call, status: status)
+                return
+                
+            }else {
+                print("[OTPTokenHandler]: Json sent to front: ");
+                call.resolve(jsonObject)
                 return
             }
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("[Raw JSON Response]: \(jsonString)")
-            }
-        }.resume()
-   }
-
+            
+        }
+        
+    }
+    
+    func buildSuccessErrorCallback (call: CAPPluginCall, status: String) {
+        
+        let outMessage: [String: Any] = [
+                "name": "status",
+                "value": status
+        ]
+            
+        let successCallback: [String: Any] = [
+            "type": "SuccessCallback",
+            "output": [outMessage]
+        ]
+        
+        let result: [String: Any] = [
+            "callbacks": [successCallback]
+        ]
+        
+        call.resolve(result)
+        
+    }
     
     func checkServerAndDeviceOtpState(call: CAPPluginCall, uuid: String){
         

@@ -26,6 +26,7 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getQuestionForgotPassword", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "answerQuestionForgotPassword", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "changePasswordForgotPassword", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getCurrentSession", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "isValidAuthMethod", returnType: CAPPluginReturnPromise),
     ]
     public var pendingNode: Node? = nil
@@ -108,6 +109,10 @@ public class ForgerockBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         let handler = ForgotPasswordHandler(call: call, plugin: self)
         let cb = NodeForgotPasswordCallbacks(call: call, plugin: self, idPath: ForgotPasswordIdPath.changePass)
         handler.changePasswordForgotPassword(call, completion: cb.handle);
+    }
+    
+    @objc func getCurrentSession(_ call: CAPPluginCall) {
+        UserHandler.getCurrentSession(call: call)
     }
 
      @objc func isValidAuthMethod(_ call: CAPPluginCall) {

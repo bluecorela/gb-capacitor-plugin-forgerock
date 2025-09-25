@@ -24,4 +24,11 @@ class UserHandler {
             }
         }
     }
+    
+    static func getCurrentSession(call: CAPPluginCall) {
+        let sessionToken = FRSession.currentSession?.sessionToken?.value
+        call.resolve([
+            "currentSession": sessionToken
+        ])
+    }
 }
