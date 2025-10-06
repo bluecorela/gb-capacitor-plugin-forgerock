@@ -59,7 +59,7 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
                 if(Objects.equals(Step, "PERSONAL_ID")){
                     stringCallback.setValue(metaData);
                     node.next(context, this);
-                }else if(Objects.equals(Step, "USERNAME_PASSWORD")){
+                }else if(Objects.equals(Step, "USERNAME_PASS")){
                     Log.d(TAG, "[AffiliationNodeListener] stringCallback " + ((StringAttributeInputCallback) cb).getContent());
                     saveNodePending(node);
                     sendResolve("next", "");
