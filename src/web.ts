@@ -1,6 +1,6 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { AuthMethodResponse, ForgerockBridgePlugin, GetAuthMethodRequest, ValidAuthMethodRequest } from './definitions';
+import type { AuthMethodResponse, ForgerockBridgePlugin, GetAuthMethodRequest, selectOption, ValidAuthMethodRequest } from './definitions';
 
 
 export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlugin {
@@ -116,5 +116,9 @@ export class ForgerockBridgeWeb extends WebPlugin implements ForgerockBridgePlug
     } catch (err: any) {
       return Promise.resolve({callbacks: []});
     }
+  }
+
+  affiliateUser(_options: {journey: string, step: string , meta: string}): Promise<{ status: string; message: string, data?: selectOption[] }> {
+    return Promise.resolve({ status: "", message: "" });
   }
 }

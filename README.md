@@ -41,6 +41,8 @@ npm run build
 * [`getCurrentSession()`](#getcurrentsession)
 * [`isValidAuthMethod(...)`](#isvalidauthmethod)
 * [`isValidAuthMethod(...)`](#isvalidauthmethod)
+* [`affiliateUser(...)`](#affiliateuser)
+* [`setAvatar(...)`](#setavatar)
 * [Type Aliases](#type-aliases)
 
 </docgen-index>
@@ -273,6 +275,36 @@ isValidAuthMethod(options: ValidAuthMethodRequest) => Promise<AuthMethodResponse
 --------------------
 
 
+### affiliateUser(...)
+
+```typescript
+affiliateUser(options: { journey: string; step: string; meta: string; }) => Promise<ForgeRockResponse>
+```
+
+| Param         | Type                                                          |
+| ------------- | ------------------------------------------------------------- |
+| **`options`** | <code>{ journey: string; step: string; meta: string; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#forgerockresponse">ForgeRockResponse</a>&gt;</code>
+
+--------------------
+
+
+### setAvatar(...)
+
+```typescript
+setAvatar(options: { journey: string; step: string; meta: string; }) => Promise<{ status: string; data: selectOption[]; }>
+```
+
+| Param         | Type                                                          |
+| ------------- | ------------------------------------------------------------- |
+| **`options`** | <code>{ journey: string; step: string; meta: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ status: string; data: selectOption[]; }&gt;</code>
+
+--------------------
+
+
 ### Type Aliases
 
 
@@ -294,5 +326,15 @@ isValidAuthMethod(options: ValidAuthMethodRequest) => Promise<AuthMethodResponse
 #### ValidAuthMethodRequest
 
 <code>{ url: string; trxId: string; payload: <a href="#authmethodresponse">AuthMethodResponse</a>; }</code>
+
+
+#### ForgeRockResponse
+
+<code>{ status: string; message: string }</code>
+
+
+#### selectOption
+
+<code>{ label: string; value: string }</code>
 
 </docgen-api>
