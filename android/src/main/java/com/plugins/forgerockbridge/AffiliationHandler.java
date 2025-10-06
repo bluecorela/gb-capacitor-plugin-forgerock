@@ -50,11 +50,10 @@ public class AffiliationHandler {
             case "PERSONAL_ID":
                 startJourney(call, context, pluginState, journey);
                 break;
-
             case "OTP":
                 confirmEmail(call, context, pluginState);
                 break;
-            case "USERNAME_PASSWORD":
+            case "USERNAME_PASS":
                 setUsernamePassword(call, context, pluginState);
                 break;
             case "AVATAR":
