@@ -102,7 +102,7 @@ public class AffiliationHandler {
                 pending.next(context, new AffiliationNodeListener(call, context, pluginState));
             }
         }
-        Log.d(TAG, "Callbacks HERE: " + callbackNames.toString());
+        Log.d(TAG, "[AffiliationHandler] Callbacks Here: " + callbackNames.toString());
     }
 
     public static void setUsernamePassword(PluginCall call, Context context, PluginState pluginState){
@@ -113,10 +113,10 @@ public class AffiliationHandler {
         String password = metaData.getString("password");
 
         JSONArray callbackNames = new JSONArray();
-        Log.d(TAG, "DATA "+metaData);
-        Log.d(TAG, "USER "+username);
+        Log.d(TAG, "[AffiliationHandler] DATA "+metaData);
+        Log.d(TAG, "[AffiliationHandler] USER "+username);
 
-        Log.d(TAG, "PASS "+password +" CHANGE "+ password.toCharArray());
+        Log.d(TAG, "[AffiliationHandler] PASS "+password +" CHANGE "+ password.toCharArray());
 
         for (Callback cb : pending.getCallbacks()) {
             callbackNames.put(cb.getClass().getSimpleName());
@@ -132,7 +132,7 @@ public class AffiliationHandler {
 
         pending.next(context, new AffiliationNodeListener(call, context, pluginState));
 
-        Log.d(TAG, "Callbacks USERPASS: " + callbackNames.toString());
+        Log.d(TAG, "[AffiliationHandler] Callbacks USERPASS: " + callbackNames.toString());
     }
 
     public static void setAvatar(PluginCall call, Context context, PluginState pluginState){
@@ -152,7 +152,7 @@ public class AffiliationHandler {
                 pending.next(context, new AffiliationNodeListener(call, context, pluginState));
             }
         }
-        Log.d(TAG, "Callbacks AVATAR: " + callbackNames.toString());
+        Log.d(TAG, "[AffiliationHandler] Callbacks AVATAR: " + callbackNames.toString());
     }
 
     public static void setKBA(PluginCall call, Context context, PluginState pluginState) throws JSONException {
@@ -181,7 +181,7 @@ public class AffiliationHandler {
                 KbaCreateCallback kbaCallback = (KbaCreateCallback) cb;
 
                 if (kbaIndex >= questionsValues.length() || kbaIndex >= answersValues.length()) {
-                    Log.w(TAG, "[AffiliationHandler] No hay Q/A para KBA index=" + kbaIndex);
+                    Log.d(TAG, "[AffiliationHandler] empty Q/A para KBA index=" + kbaIndex);
                     kbaIndex++;
                     continue;
                 }
@@ -197,13 +197,13 @@ public class AffiliationHandler {
                 kbaCallback.setSelectedQuestion(question);
                 kbaCallback.setSelectedAnswer(answer);
 
-                Log.d(TAG, "[VER CONTENT]" +  cb.getContent());
+                Log.d(TAG, "[AffiliationHandler]view content" +  cb.getContent());
 
                 kbaIndex++;
             }
         }
         pending.next(context, new AffiliationNodeListener(call, context, pluginState));
-        Log.d(TAG, "Callbacks KBA: " + callbackNames.toString());
+        Log.d(TAG, "[AffiliationHandler] Callbacks KBA: " + callbackNames.toString());
     }
 
     public static void setTerms(PluginCall call, Context context, PluginState pluginState){
@@ -222,6 +222,6 @@ public class AffiliationHandler {
                 pending.next(context, new AffiliationNodeListener(call, context, pluginState));
             }
         }
-        Log.d(TAG, "Callbacks TERMS: " + callbackNames.toString());
+        Log.d(TAG, "[AffiliationHandler] Callbacks TERMS: " + callbackNames.toString());
     }
 }

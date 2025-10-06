@@ -117,13 +117,13 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
 
     @Override
     public void onSuccess(FRSession frSession) {
-        Log.d(TAG, "onSuccess: " );
+        Log.d(TAG, "AffiliationNodeListener] onSuccess: " );
         sendResolve("success", "");
     }
 
     @Override
     public void onException(@NonNull Exception e) {
-        Log.d(TAG, "ERROR: "+e.getMessage() );
+        Log.e(TAG, "AffiliationNodeListener] ERROR: "+e.getMessage() );
         sendResolve("error", e.getMessage());
     }
 
