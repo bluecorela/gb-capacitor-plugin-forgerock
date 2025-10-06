@@ -5,7 +5,6 @@ import android.util.Log;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
-import com.plugins.forgerockbridge.enums.AffiliationEnum;
 import com.plugins.forgerockbridge.interceptor.ForgotPasswordInterceptor;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.AffiliationNodeListener;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.AuthNodeListener;
