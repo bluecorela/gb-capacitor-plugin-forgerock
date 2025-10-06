@@ -24,7 +24,12 @@ export type ValidAuthMethodRequest = {
   payload: AuthMethodResponse; 
 };
 
-export type ForgeRogeResponse = { status: string; message: string };
+export type selectOption = {
+ label: string;
+ value: string
+};
+
+
 export interface ForgerockBridgePlugin {
   initialize(options: {
     url: string;
@@ -70,6 +75,9 @@ export interface ForgerockBridgePlugin {
 
   isValidAuthMethod(options: GetAuthMethodRequest): Promise<AuthMethodResponse>;
   isValidAuthMethod(options: ValidAuthMethodRequest): Promise<AuthMethodResponse>;
+
+  affiliateUser(options: {journey: string, step: string , meta: string}): Promise<{ status: string; message: string, data?: selectOption[] }>;
+
 }
 
 const ForgerockBridge = registerPlugin<ForgerockBridgePlugin>('ForgerockBridge');

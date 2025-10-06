@@ -2,6 +2,7 @@ package com.plugins.forgerockbridge;
 
 import android.content.Context;
 
+import org.json.JSONException;
 import org.w3c.dom.UserDataHandler;
 
 import com.getcapacitor.Plugin;
@@ -111,6 +112,9 @@ public class ForgerockBridgePlugin extends Plugin {
         UserHandler.getCurrentSession(call);
     }
 
-    
+    @PluginMethod
+    public void affiliateUser(PluginCall call) throws JSONException {
+        AffiliationHandler.StepRouter(call, context, pluginState);
+    }
 
 }
