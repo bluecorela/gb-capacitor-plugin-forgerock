@@ -208,5 +208,5 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
         sendResolve(status, message);
     }
 
-    private void handle
+    
 }

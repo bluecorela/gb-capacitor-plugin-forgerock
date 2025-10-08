@@ -103,7 +103,6 @@ public class AffiliationHandler {
         Node pending = pluginState.getPendingNode();
 
         for (Callback cb : pending.getCallbacks()) {
-            callbackNames.put(cb.getClass().getSimpleName());
             if (cb instanceof NameCallback) {
                 String metaData = call.getString("meta");
 
@@ -142,7 +141,6 @@ public class AffiliationHandler {
     public static void setAvatar(PluginCall call, Context context, PluginState pluginState){
         Node pending = pluginState.getPendingNode();
         for (Callback cb : pending.getCallbacks()) {
-            callbackNames.put(cb.getClass().getSimpleName());
             if (cb instanceof StringAttributeInputCallback nameCallback) {
                 String metaData = call.getString("meta");
 
