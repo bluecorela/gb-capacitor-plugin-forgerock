@@ -50,23 +50,19 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
 
         TextOutputCallback textOutputCallback = null;
         ConfirmationCallback confirmationCallback = null;
+        HiddenValueCallback hiddenValueCallback = null;
 
         boolean pendingUser = false;
         boolean pendingPass = false;
         boolean hasKBA = false;
         boolean hasConfirmCb = false;
         boolean isError = false;
-        boolean stop = false;
 
         String email = "";
-        String errorCode;
 
-        JSONArray callbackNames = new JSONArray();
         JSONArray securityQuestions = new JSONArray();
 
-
         for (Callback cb : node.getCallbacks()) {
-            callbackNames.put(cb.getClass().getSimpleName());
 
             if (cb instanceof StringAttributeInputCallback stringCallback) {
               handleStringAttributeInput(stringCallback, node, metaData, Step);
@@ -79,16 +75,7 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
                 hasConfirmCb = true;
                 confirmationCallback = (ConfirmationCallback) cb;
             }else if(cb instanceof HiddenValueCallback) {
-                if ("mail".equalsIgnoreCase(((HiddenValueCallback) cb).getId())) {
-                  assert Step != null;
-                  if (Step.equals("PERSONAL_ID") || Step.equals("RESEND")) {
-                    Log.d(TAG, "[AffiliationNodeListener] se envio " + Step);
-                      email = ((HiddenValueCallback) cb).getValue();
-                      saveNodePending(node);
-                      sendResolve("next", email);
-                  }
-                }
-                Log.d(TAG, "[AffiliationNodeListener] Send email " + email);
+                hiddenValueCallback = (HiddenValueCallback) cb;
             }else if(cb instanceof ValidatedUsernameCallback) {
                 pendingUser = true;
                 Log.d(TAG, "[AffiliationNodeListener] ValidatedUsernameCallback " + ((ValidatedUsernameCallback) cb).getContent());
@@ -112,8 +99,9 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
                 Log.d(TAG, "[AffiliationNodeListener] KbaCreateCallback " + ((KbaCreateCallback) cb).getPredefinedQuestions());
             }
         }
-        Log.d(TAG, "[AffiliationNodeListener] Callbacks Here: " + callbackNames.toString());
 
+
+        //Actions segment
         if(textOutputCallback != null){
             Log.d(TAG, "[AffiliationNodeListener] Texoutput content " + textOutputCallback.getContent());
             handleTextOutPut(textOutputCallback, node);
@@ -128,10 +116,22 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
             }
         }
 
-        if(Objects.equals(Step, "OTP") && pendingUser && pendingPass){
-            saveNodePending(node);
-            sendResolve("next", "");
+        if(hiddenValueCallback != null){
+            if ("mail".equalsIgnoreCase(hiddenValueCallback.getId())) {
+                assert Step != null;
+                if (Step.equals("PERSONAL_ID") || Step.equals("RESEND")) {
+                    Log.d(TAG, "[AffiliationNodeListener] se envio " + Step);
+                    email = hiddenValueCallback.getValue();
+                    saveNodePending(node);
+                    sendResolve("next", email);
+                }
+            }
         }
+
+        if(pendingUser && pendingPass){
+            handleUserPassCallback(node, Step);
+        }
+
         if(hasKBA){
             Log.d(TAG, "[AffiliationNodeListener] sequrityQuestions " + securityQuestions.toString());
             sendSecurityQuestions(node, securityQuestions);
@@ -195,4 +195,18 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
             sendResolve("next", "");
         }
     }
+
+    private void handleUserPassCallback(Node node, String step){
+        String message = "";
+        String status = "next";
+        saveNodePending(node);
+        if(Objects.equals(step, "USERNAME_PASS") ){
+            message = "Invalid User ";
+            status = "retry";
+        }
+        Log.d(TAG, "[AffiliationNodeListener] handleUserPassCallback " +status+ "message" + message);
+        sendResolve(status, message);
+    }
+
+    private void handle
 }
