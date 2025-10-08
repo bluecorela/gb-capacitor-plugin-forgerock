@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
+import com.plugins.forgerockbridge.ErrorHandler;
 import com.plugins.forgerockbridge.state.PluginState;
 
 import org.forgerock.android.auth.FRSession;
@@ -27,6 +28,8 @@ import org.json.JSONObject;
 import java.util.List;
 import java.util.Objects;
 
+import com.plugins.forgerockbridge.ErrorHandler.FRException;
+
 public class AffiliationNodeListener implements NodeListener<FRSession> {
     private static final String TAG = "ForgeRockBridge";
     private final PluginCall call;
@@ -41,46 +44,51 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
 
     @Override
     public void onCallbackReceived(@NonNull Node node) {
+
         String Step = call.getString("step");
         String metaData = call.getString("meta");
+
+        TextOutputCallback textOutputCallback = null;
+        ConfirmationCallback confirmationCallback = null;
 
         boolean pendingUser = false;
         boolean pendingPass = false;
         boolean hasKBA = false;
+        boolean hasConfirmCb = false;
+        boolean isError = false;
+        boolean stop = false;
 
         String email = "";
+        String errorCode;
 
         JSONArray callbackNames = new JSONArray();
         JSONArray securityQuestions = new JSONArray();
+
+
         for (Callback cb : node.getCallbacks()) {
             callbackNames.put(cb.getClass().getSimpleName());
 
             if (cb instanceof StringAttributeInputCallback stringCallback) {
-                if(Objects.equals(Step, "PERSONAL_ID")){
-                    stringCallback.setValue(metaData);
-                    node.next(context, this);
-                }else if(Objects.equals(Step, "USERNAME_PASS")){
-                    Log.d(TAG, "[AffiliationNodeListener] stringCallback " + ((StringAttributeInputCallback) cb).getContent());
-                    saveNodePending(node);
-                    sendResolve("next", "");
-                }
-            } else if(cb instanceof HiddenValueCallback) {
-
-                if ("mail".equalsIgnoreCase(((HiddenValueCallback) cb).getId()) && Objects.equals(Step, "PERSONAL_ID")) {
-                    email = ((HiddenValueCallback) cb).getValue();
-                    saveNodePending(node);
-                    sendResolve("next", email);
+              handleStringAttributeInput(stringCallback, node, metaData, Step);
+            } else if(cb instanceof TextOutputCallback ) {
+                textOutputCallback = (TextOutputCallback) cb;
+               if( textOutputCallback.getMessageType() == 2){
+                   isError = true;
+               }
+            }else if(cb instanceof ConfirmationCallback) {
+                hasConfirmCb = true;
+                confirmationCallback = (ConfirmationCallback) cb;
+            }else if(cb instanceof HiddenValueCallback) {
+                if ("mail".equalsIgnoreCase(((HiddenValueCallback) cb).getId())) {
+                  assert Step != null;
+                  if (Step.equals("PERSONAL_ID") || Step.equals("RESEND")) {
+                    Log.d(TAG, "[AffiliationNodeListener] se envio " + Step);
+                      email = ((HiddenValueCallback) cb).getValue();
+                      saveNodePending(node);
+                      sendResolve("next", email);
+                  }
                 }
                 Log.d(TAG, "[AffiliationNodeListener] Send email " + email);
-            }else if(cb instanceof ConfirmationCallback) {
-                if(((ConfirmationCallback) cb).getMessageType() == 0){
-
-                    if(!Objects.equals(Step, "PERSONAL_ID")){
-                        saveNodePending(node);
-                        sendResolve("next", "");
-                    }
-                }
-
             }else if(cb instanceof ValidatedUsernameCallback) {
                 pendingUser = true;
                 Log.d(TAG, "[AffiliationNodeListener] ValidatedUsernameCallback " + ((ValidatedUsernameCallback) cb).getContent());
@@ -104,6 +112,21 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
                 Log.d(TAG, "[AffiliationNodeListener] KbaCreateCallback " + ((KbaCreateCallback) cb).getPredefinedQuestions());
             }
         }
+        Log.d(TAG, "[AffiliationNodeListener] Callbacks Here: " + callbackNames.toString());
+
+        if(textOutputCallback != null){
+            Log.d(TAG, "[AffiliationNodeListener] Texoutput content " + textOutputCallback.getContent());
+            handleTextOutPut(textOutputCallback, node);
+        }
+
+        if(hasConfirmCb && confirmationCallback != null && !isError ){
+            if(confirmationCallback.getMessageType() == 0){
+                if(!Objects.equals(Step, "PERSONAL_ID")){
+                    saveNodePending(node);
+                    sendResolve("next", "");
+                }
+            }
+        }
 
         if(Objects.equals(Step, "OTP") && pendingUser && pendingPass){
             saveNodePending(node);
@@ -113,6 +136,8 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
             Log.d(TAG, "[AffiliationNodeListener] sequrityQuestions " + securityQuestions.toString());
             sendSecurityQuestions(node, securityQuestions);
         }
+
+
     }
 
     @Override
@@ -133,7 +158,7 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
         JSObject result = new JSObject()
                 .put("status", status)
                 .put("message", message);
-
+        Log.d(TAG, "[AffiliationNodeListener]: result"+result);
         call.resolve(result);
     }
 
@@ -150,5 +175,24 @@ public class AffiliationNodeListener implements NodeListener<FRSession> {
 
     private void saveNodePending(Node node){
         pluginState.setPendingNode(node);
+    }
+
+    private void handleTextOutPut(TextOutputCallback textOutputCallback, Node node){
+        if(textOutputCallback.getMessageType() == 2){
+           saveNodePending(node);
+           sendResolve("error", textOutputCallback.getMessage());
+        }
+        Log.d(TAG, "[AffiliationNodeListener] TextOutputCallback " + textOutputCallback.getContent());
+    }
+
+    private void handleStringAttributeInput(StringAttributeInputCallback stringCallback, Node node, String metaData, String Step){
+        if(Objects.equals(Step, "PERSONAL_ID")){
+            stringCallback.setValue(metaData);
+            node.next(context, this);
+        }else if(Objects.equals(Step, "USERNAME_PASS")){
+            Log.d(TAG, "[AffiliationNodeListener] stringCallback " + stringCallback.getContent());
+            saveNodePending(node);
+            sendResolve("next", "");
+        }
     }
 }

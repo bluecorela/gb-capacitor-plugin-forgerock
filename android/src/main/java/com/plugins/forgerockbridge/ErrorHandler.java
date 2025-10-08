@@ -5,6 +5,7 @@ import com.getcapacitor.PluginCall;
 public class ErrorHandler {
     public enum ErrorCode {
         UNKNOWN_ERROR("FRE000"),
+        INVALID_CUSTOMER_ID("FRE013"),
         MISSING_JOURNEY("FRE024"),
         AUTHENTICATE_FAILED("FRE025"),
         NO_ACCOUNTS_REGISTERED("FRE026"),
@@ -39,7 +40,7 @@ public class ErrorHandler {
           super(code.name());
           this.code = code;
       }
-      
+
       public ErrorHandler.ErrorCode getCode() {
           return code;
       }
