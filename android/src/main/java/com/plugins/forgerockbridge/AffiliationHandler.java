@@ -16,6 +16,7 @@ import org.forgerock.android.auth.NodeListener;
 import org.forgerock.android.auth.RequestInterceptorRegistry;
 import org.forgerock.android.auth.callback.Callback;
 import org.forgerock.android.auth.callback.ConfirmationCallback;
+import org.forgerock.android.auth.callback.HiddenValueCallback;
 import org.forgerock.android.auth.callback.KbaCreateCallback;
 import org.forgerock.android.auth.callback.NameCallback;
 import org.forgerock.android.auth.callback.StringAttributeInputCallback;
@@ -24,6 +25,8 @@ import org.forgerock.android.auth.callback.ValidatedUsernameCallback;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.Objects;
 
 public class AffiliationHandler {
     private static final String TAG = "ForgeRockBridge";
@@ -64,6 +67,9 @@ public class AffiliationHandler {
             case "TERMS":
                 setTerms(call, context, pluginState);
                 break;
+            case "RESEND":
+                resendEmail(call, context, pluginState);
+                break;
         }
     }
 
@@ -71,7 +77,7 @@ public class AffiliationHandler {
         String language = call.getString("language");
 
         if (language != null) {
-            Log.e(TAG, "[AffiliationHandler: GET LANGUAGE");
+            Log.d(TAG, "[AffiliationHandler: GET LANGUAGE");
             RequestInterceptorRegistry.getInstance()
                 .register(new ForgotPasswordInterceptor(language));
         }
@@ -79,6 +85,21 @@ public class AffiliationHandler {
         FRSession.authenticate(context, journey, new AffiliationNodeListener(call, context, pluginState));
     }
 
+    public static void resendEmail(PluginCall call, Context context, PluginState pluginState) {
+        Node pending = pluginState.getPendingNode();
+        String Step = call.getString("step");
+        JSONArray callbackNames = new JSONArray();
+
+        for (Callback cb : pending.getCallbacks()) {
+            callbackNames.put(cb.getClass().getSimpleName());
+            if(cb instanceof ConfirmationCallback confirmationCallback) {
+                confirmationCallback.setSelectedIndex(1);
+            }
+
+        }
+        pending.next(context, new AffiliationNodeListener(call, context, pluginState));
+        Log.d(TAG, "[AffiliationHandler] Callbacks Resend: " + callbackNames.toString());
+    }
 
     public static void confirmEmail(PluginCall call, Context context, PluginState pluginState){
         Node pending = pluginState.getPendingNode();
@@ -90,10 +111,7 @@ public class AffiliationHandler {
             if (cb instanceof NameCallback) {
                 String metaData = call.getString("meta");
 
-                Log.d(TAG, "[AffiliationHandler] confirmEmail: " + metaData);
-
                 NameCallback nameCallback = (NameCallback) cb;
-
 
                 nameCallback.setName(metaData);
 
@@ -111,10 +129,9 @@ public class AffiliationHandler {
         String password = metaData.getString("password");
 
         JSONArray callbackNames = new JSONArray();
-        Log.d(TAG, "[AffiliationHandler] DATA "+metaData);
-        Log.d(TAG, "[AffiliationHandler] USER "+username);
-
-        Log.d(TAG, "[AffiliationHandler] PASS "+password +" CHANGE "+ password.toCharArray());
+        Log.d(TAG, "[AffiliationHandler] Data "+metaData);
+        Log.d(TAG, "[AffiliationHandler] User "+username);
+        Log.d(TAG, "[AffiliationHandler] Pass "+password +" Change "+ password.toCharArray());
 
         for (Callback cb : pending.getCallbacks()) {
             callbackNames.put(cb.getClass().getSimpleName());
