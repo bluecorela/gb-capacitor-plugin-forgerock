@@ -7,19 +7,20 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
 import com.plugins.forgerockbridge.state.PluginState;
 
-import org.forgerock.android.auth.FRSession;
+import org.forgerock.android.auth.AccessToken;
+import org.forgerock.android.auth.FRUser;
 import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.NodeListener;
-import org.forgerock.android.auth.SSOToken;
 import org.forgerock.android.auth.callback.Callback;
 import org.forgerock.android.auth.callback.ConfirmationCallback;
 import org.forgerock.android.auth.callback.NameCallback;
 import org.forgerock.android.auth.callback.PasswordCallback;
 import org.forgerock.android.auth.callback.TextOutputCallback;
 
+import org.forgerock.android.auth.exception.AuthenticationRequiredException;
 import org.json.JSONArray;
 
-public class AuthNodeListener implements NodeListener<FRSession> {
+public class AuthNodeListener implements NodeListener<FRUser> {
 
     private static final String TAG = "ForgeRockBridge";
     private final PluginCall call;
@@ -33,9 +34,9 @@ public class AuthNodeListener implements NodeListener<FRSession> {
     }
 
     @Override
-    public void onSuccess(FRSession session) {
+    public void onSuccess(FRUser session) {
         try {
-            SSOToken token = session.getSessionToken();
+            AccessToken token = session.getAccessToken();
             JSObject result = new JSObject()
                     .put("status", "authenticated")
                     .put("token", token.getValue());
@@ -89,7 +90,7 @@ public class AuthNodeListener implements NodeListener<FRSession> {
             if (hasTextOutput && hasConfirmation) {
                 Log.d(TAG, "[AuthNodeListener] TextOutput + Confirmation detected. Sending internal next()");
 
-                node.next(context, new NodeListener<FRSession>() {
+                node.next(context, new NodeListener<FRUser>() {
                     @Override
                     public void onCallbackReceived(Node nextNode) {
                         boolean hasNextName = false;
@@ -115,11 +116,17 @@ public class AuthNodeListener implements NodeListener<FRSession> {
                     }
 
                     @Override
-                    public void onSuccess(FRSession session) {
+                    public void onSuccess(FRUser session) {
                         pluginState.reset();
-                        JSObject result = new JSObject()
-                                .put("status", "authenticated")
-                                .put("token", session.getSessionToken().getValue());
+                        JSObject result = null;
+                        try {
+                            result = new JSObject()
+                                    .put("status", "authenticated")
+                                    .put("token", session.getAccessToken());
+                        } catch (AuthenticationRequiredException e) {
+                            call.reject("Not getting session.getAccessToken() ");
+                            throw new RuntimeException(e);
+                        }
                         call.resolve(result);
                     }
 

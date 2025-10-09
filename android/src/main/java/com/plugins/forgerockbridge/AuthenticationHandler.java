@@ -4,6 +4,8 @@ import android.content.Context;
 import android.util.Log;
 import com.getcapacitor.PluginCall;
 import org.forgerock.android.auth.FRSession;
+import org.forgerock.android.auth.FRUser;
+
 import com.plugins.forgerockbridge.nodeListenerCallbacks.AuthNodeListener;
 import com.plugins.forgerockbridge.state.PluginState;
 
@@ -27,7 +29,7 @@ public class AuthenticationHandler {
                 pluginState.getPendingNode().next(context, new AuthNodeListener(call, context, pluginState));
             } else {
                 Log.d(TAG, "[AuthenticationHandler] Starting new authentication with journey: " + journey);
-                FRSession.authenticate(context, journey, new AuthNodeListener(call, context, pluginState));
+                FRUser.login(context, new AuthNodeListener(call, context, pluginState));
             }
 
         } catch (Exception e) {

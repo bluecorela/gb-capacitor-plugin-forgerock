@@ -28,13 +28,6 @@ class ForgotPasswordHandler {
             return
         }
         
-        
-        if let language = call.getString("language"), !language.isEmpty {
-            print("[ForgotPasswordHandler:startForgotPasswordJourney] HAS LANGUAGE")
-            let forgotPasswordInterceptor = ForgotPasswordInterceptor(languageCode: language)
-            RequestInterceptorRegistry.shared.registerInterceptors(interceptors: [forgotPasswordInterceptor])
-        }
-        
           FRSession.authenticate(authIndexValue: journey, completion: completion)
     }
 
