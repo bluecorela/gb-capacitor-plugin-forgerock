@@ -64,7 +64,6 @@ public class OTPTokenHandler {
       Log.d(TAG, "[OTPTokenHandler]: Journey "+journey);
 
       FRSession.authenticate(context, journey, listener);
-
     }
 
   public static void hasRegisteredMechanism(PluginCall call, Context context) {

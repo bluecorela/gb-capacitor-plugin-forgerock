@@ -5,6 +5,7 @@ import FRAuth
 class UserHandler {
     static func logout(call: CAPPluginCall) {
         FRUser.currentUser?.logout()
+         print("[ForgeRock] logout")
         call.resolve(["status": "loggedOut"])
     }
 

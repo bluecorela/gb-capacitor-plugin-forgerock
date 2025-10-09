@@ -5,15 +5,11 @@ import android.util.Log;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PluginCall;
-import com.plugins.forgerockbridge.interceptor.ForgotPasswordInterceptor;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.AffiliationNodeListener;
-import com.plugins.forgerockbridge.nodeListenerCallbacks.AuthNodeListener;
 import com.plugins.forgerockbridge.state.PluginState;
 
 import org.forgerock.android.auth.FRSession;
 import org.forgerock.android.auth.Node;
-import org.forgerock.android.auth.NodeListener;
-import org.forgerock.android.auth.RequestInterceptorRegistry;
 import org.forgerock.android.auth.callback.Callback;
 import org.forgerock.android.auth.callback.ConfirmationCallback;
 import org.forgerock.android.auth.callback.HiddenValueCallback;
@@ -74,14 +70,6 @@ public class AffiliationHandler {
     }
 
     public static void startJourney(PluginCall call, Context context, PluginState pluginState, String journey){
-        String language = call.getString("language");
-
-        if (language != null) {
-            Log.d(TAG, "[AffiliationHandler: GET LANGUAGE");
-            RequestInterceptorRegistry.getInstance()
-                .register(new ForgotPasswordInterceptor(language));
-        }
-
         FRSession.authenticate(context, journey, new AffiliationNodeListener(call, context, pluginState));
     }
 

@@ -8,15 +8,12 @@ import com.getcapacitor.PluginCall;
 
 import org.forgerock.android.auth.FRSession;
 import org.forgerock.android.auth.NodeListener;
-import org.forgerock.android.auth.RequestInterceptorRegistry;
 import org.forgerock.android.auth.callback.ConfirmationCallback;
 import org.forgerock.android.auth.callback.PasswordCallback;
 import org.forgerock.android.auth.callback.ValidatedPasswordCallback;
 import org.forgerock.android.auth.Node;
 import org.forgerock.android.auth.callback.Callback;
-
 import com.plugins.forgerockbridge.enums.ForgotPasswordEnum;
-import com.plugins.forgerockbridge.interceptor.ForgotPasswordInterceptor;
 import com.plugins.forgerockbridge.nodeListenerCallbacks.ForgotPasswordNodeListener;
 import com.plugins.forgerockbridge.state.PluginState;
 
@@ -41,13 +38,6 @@ public class ForgotPasswordHandler {
             ErrorHandler.reject(call, ErrorHandler.ErrorCode.MISSING_PARAMETER);
             return;
         }
-
-        if (language != null) {
-            Log.e(TAG, "[ForgotPasswordHandler: startForgotPasswordJourney]: GET LANGUAGE");
-            RequestInterceptorRegistry.getInstance()
-                .register(new ForgotPasswordInterceptor(language));
-        }
-
         FRSession.authenticate(context, journey, listener);
     }
 
@@ -60,7 +50,6 @@ public class ForgotPasswordHandler {
             ErrorHandler.reject(call, ErrorHandler.ErrorCode.NO_PENDING_NODE, "NO PENDING NODE SAVE");
             return;
         }
-
 
         for (Callback cb : pending.getCallbacks()) {
             if (cb instanceof PasswordCallback) {

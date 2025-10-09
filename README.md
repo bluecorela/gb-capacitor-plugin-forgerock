@@ -52,12 +52,12 @@ npm run build
 ### initialize(...)
 
 ```typescript
-initialize(options: { url: string; realm: string; journey: string; oauthClientId: string; oauthScope: string; }) => Promise<void>
+initialize(options: { url: string; realm: string; journey: string; oauthClientId: string; oauthScope: string; lang: string; }) => Promise<void>
 ```
 
-| Param         | Type                                                                                                     |
-| ------------- | -------------------------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ url: string; realm: string; journey: string; oauthClientId: string; oauthScope: string; }</code> |
+| Param         | Type                                                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ url: string; realm: string; journey: string; oauthClientId: string; oauthScope: string; lang: string; }</code> |
 
 --------------------
 
@@ -180,12 +180,12 @@ generateOTP() => Promise<{ otp: string; }>
 ### initForgotPassword(...)
 
 ```typescript
-initForgotPassword(options: { journey: string; username: string; language: string; }) => Promise<{ status: string; message: string; }>
+initForgotPassword(options: { journey: string; username: string; }) => Promise<{ status: string; message: string; }>
 ```
 
-| Param         | Type                                                                  |
-| ------------- | --------------------------------------------------------------------- |
-| **`options`** | <code>{ journey: string; username: string; language: string; }</code> |
+| Param         | Type                                                |
+| ------------- | --------------------------------------------------- |
+| **`options`** | <code>{ journey: string; username: string; }</code> |
 
 **Returns:** <code>Promise&lt;{ status: string; message: string; }&gt;</code>
 
@@ -294,12 +294,12 @@ affiliateUser(options: { journey: string; step: string; meta: string; }) => Prom
 
 #### AuthMethodResponse
 
-<code>{ authId?: string; callbacks: PasswordCallback[]; header? : string }</code>
+<code>{ authId?: string; callbacks: PasswordCallback[]; header?: string; }</code>
 
 
 #### PasswordCallback
 
-<code>{ type: "<a href="#passwordcallback">PasswordCallback</a>"; output: [{ name: "prompt"; value: string }]; input: [{ name: "IDToken1"; value: string }]; }</code>
+<code>{ type: '<a href="#passwordcallback">PasswordCallback</a>'; output: [{ name: 'prompt'; value: string }]; input: [{ name: 'IDToken1'; value: string }]; }</code>
 
 
 #### GetAuthMethodRequest
@@ -314,6 +314,6 @@ affiliateUser(options: { journey: string; step: string; meta: string; }) => Prom
 
 #### selectOption
 
-<code>{ label: string; value: string }</code>
+<code>{ label: string; value: string; }</code>
 
 </docgen-api>

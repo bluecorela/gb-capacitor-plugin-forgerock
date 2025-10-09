@@ -19,7 +19,6 @@ class OTPTokenHandler {
             ErrorHandler.reject(call, code: ErrorCode.missingJourney)
             return
         }
-        
           FRSession.authenticate(authIndexValue: journey, completion: completion)
     }
 
@@ -368,6 +367,3 @@ class OTPTokenHandler {
 
   
 }
-
-
-
