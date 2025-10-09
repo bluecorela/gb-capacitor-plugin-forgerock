@@ -88,26 +88,21 @@ public class AffiliationHandler {
     public static void resendEmail(PluginCall call, Context context, PluginState pluginState) {
         Node pending = pluginState.getPendingNode();
         String Step = call.getString("step");
-        JSONArray callbackNames = new JSONArray();
 
         for (Callback cb : pending.getCallbacks()) {
-            callbackNames.put(cb.getClass().getSimpleName());
             if(cb instanceof ConfirmationCallback confirmationCallback) {
                 confirmationCallback.setSelectedIndex(1);
             }
 
         }
+        Log.d(TAG, "[AffiliationHandler] Resend email");
         pending.next(context, new AffiliationNodeListener(call, context, pluginState));
-        Log.d(TAG, "[AffiliationHandler] Callbacks Resend: " + callbackNames.toString());
     }
 
     public static void confirmEmail(PluginCall call, Context context, PluginState pluginState){
         Node pending = pluginState.getPendingNode();
 
-        JSONArray callbackNames = new JSONArray();
-
         for (Callback cb : pending.getCallbacks()) {
-            callbackNames.put(cb.getClass().getSimpleName());
             if (cb instanceof NameCallback) {
                 String metaData = call.getString("meta");
 
@@ -118,7 +113,7 @@ public class AffiliationHandler {
                 pending.next(context, new AffiliationNodeListener(call, context, pluginState));
             }
         }
-        Log.d(TAG, "[AffiliationHandler] Callbacks Here: " + callbackNames.toString());
+        Log.d(TAG, "[AffiliationHandler] Confirm Email ");
     }
 
     public static void setUsernamePassword(PluginCall call, Context context, PluginState pluginState){
@@ -128,14 +123,10 @@ public class AffiliationHandler {
         String username = metaData.getString("user");
         String password = metaData.getString("password");
 
-        JSONArray callbackNames = new JSONArray();
         Log.d(TAG, "[AffiliationHandler] Data "+metaData);
         Log.d(TAG, "[AffiliationHandler] User "+username);
-        Log.d(TAG, "[AffiliationHandler] Pass "+password +" Change "+ password.toCharArray());
 
         for (Callback cb : pending.getCallbacks()) {
-            callbackNames.put(cb.getClass().getSimpleName());
-
             if(cb instanceof ValidatedUsernameCallback UserName) {
                 UserName.setUsername(username);
                 Log.d(TAG, "[AffiliationHandler] ValidatedUsernameCallback " + ((ValidatedUsernameCallback) cb).getContent());
@@ -144,19 +135,12 @@ public class AffiliationHandler {
                 Log.d(TAG, "[AffiliationHandler] ValidatedPasswordCallback " + ((ValidatedPasswordCallback) cb).getContent());
             }
         }
-
         pending.next(context, new AffiliationNodeListener(call, context, pluginState));
-
-        Log.d(TAG, "[AffiliationHandler] Callbacks USERPASS: " + callbackNames.toString());
     }
 
     public static void setAvatar(PluginCall call, Context context, PluginState pluginState){
         Node pending = pluginState.getPendingNode();
-
-        JSONArray callbackNames = new JSONArray();
-
         for (Callback cb : pending.getCallbacks()) {
-            callbackNames.put(cb.getClass().getSimpleName());
             if (cb instanceof StringAttributeInputCallback nameCallback) {
                 String metaData = call.getString("meta");
 
@@ -167,13 +151,12 @@ public class AffiliationHandler {
                 pending.next(context, new AffiliationNodeListener(call, context, pluginState));
             }
         }
-        Log.d(TAG, "[AffiliationHandler] Callbacks AVATAR: " + callbackNames.toString());
+        Log.d(TAG, "[AffiliationHandler] Avatar: ");
     }
 
     public static void setKBA(PluginCall call, Context context, PluginState pluginState) throws JSONException {
         Node pending = pluginState.getPendingNode();
 
-        JSONArray callbackNames = new JSONArray();
         JSONArray metaData = call.getArray("meta");
         if (metaData == null || metaData.length() == 0) {
             Log.e(TAG, "[AffiliationHandler]: its empty");
@@ -186,17 +169,16 @@ public class AffiliationHandler {
 
         int kbaIndex = 0;
 
-        Log.d(TAG, "[AffiliationHandler] ARRAY: " + metaData);
+        Log.d(TAG, "[AffiliationHandler] initial Data: " + metaData);
         Log.d(TAG, "[AffiliationHandler] questionsValues: " + questionsValues);
         Log.d(TAG, "[AffiliationHandler] answersValues: " + answersValues);
 
         for (Callback cb : pending.getCallbacks()) {
-            callbackNames.put(cb.getClass().getSimpleName());
             if (cb instanceof KbaCreateCallback) {
                 KbaCreateCallback kbaCallback = (KbaCreateCallback) cb;
 
                 if (kbaIndex >= questionsValues.length() || kbaIndex >= answersValues.length()) {
-                    Log.d(TAG, "[AffiliationHandler] empty Q/A para KBA index=" + kbaIndex);
+                    Log.d(TAG, "[AffiliationHandler] empty Q/A to KBA index=" + kbaIndex);
                     kbaIndex++;
                     continue;
                 }
@@ -218,15 +200,12 @@ public class AffiliationHandler {
             }
         }
         pending.next(context, new AffiliationNodeListener(call, context, pluginState));
-        Log.d(TAG, "[AffiliationHandler] Callbacks KBA: " + callbackNames.toString());
     }
 
     public static void setTerms(PluginCall call, Context context, PluginState pluginState){
         Node pending = pluginState.getPendingNode();
-        JSONArray callbackNames = new JSONArray();
-
+     
         for (Callback cb : pending.getCallbacks()) {
-            callbackNames.put(cb.getClass().getSimpleName());
             if (cb instanceof ConfirmationCallback confirmCallback) {
                 String metaData = call.getString("meta");
 
@@ -237,6 +216,6 @@ public class AffiliationHandler {
                 pending.next(context, new AffiliationNodeListener(call, context, pluginState));
             }
         }
-        Log.d(TAG, "[AffiliationHandler] Callbacks TERMS: " + callbackNames.toString());
+        Log.d(TAG, "[AffiliationHandler] Terms and conditions ");
     }
 }
