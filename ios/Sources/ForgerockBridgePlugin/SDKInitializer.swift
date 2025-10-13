@@ -10,7 +10,8 @@ class SDKInitializer {
               let realm = call.getString("realm"),
               let journey = call.getString("journey"),
               let oauthClientId = call.getString("oauthClientId"),
-              let oauthScope = call.getString("oauthScope")
+              let oauthScope = call.getString("oauthScope"),
+              let language = call.getString("lang")
         else {
             call.reject("Missing required parameters: url, realm, journey, oauthClientId, or oauthScope")
             return
@@ -27,6 +28,9 @@ class SDKInitializer {
                 oauthClientId: oauthClientId,
                 oauthRedirectUri: "\(bundleId)://oauth2redirect",
                 oauthScope: oauthScope)
+
+            let headersGBForce = HeadHeaderGBRequestInterceptor(languageCode: language)
+            FRRequestInterceptorRegistry.shared.registerInterceptors(interceptors: [headersGBForce])
 
             try FRAuth.start(options: options)
             try FRAClient.start() 
